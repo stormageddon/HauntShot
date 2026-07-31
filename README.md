@@ -68,14 +68,36 @@ npm run dev:desktop
 
 On Mac, grant **Screen Recording** if prompted. Hotkey or the Capture button runs region select → upload → clipboard URL + notification.
 
-Create Cloudflare resources before production deploy:
+On Windows, capture drives the `ms-screenclip` overlay (the one behind Win+Shift+S)
+and waits for a *new* clipboard image, so cancelling can't upload something you
+copied earlier. There is no headless region capture on Windows to use instead.
+
+## Windows builds
+
+Tauri can't cross-compile, so Windows installers come from the `Windows build`
+workflow (`windows-latest`), which uploads the MSI and NSIS artifacts on every
+push to `main` and on manual dispatch.
+
+The API base is baked in at build time from the `HAUNTSHOT_API_BASE` repo
+variable — set it once the Worker is deployed, or pass one to a manual run.
+Without it a build points at `127.0.0.1:8787`, which only works if the tester
+is running the API themselves. A runtime `HAUNTSHOT_API_BASE` env var still
+wins, for local work.
+
+Installers are unsigned, so Windows SmartScreen will warn on first run.
+
+## Deploy the API
 
 ```bash
-npx wrangler d1 create hauntshot
+npx wrangler login
+npx wrangler d1 create hauntshot          # put the real database_id in wrangler.jsonc
 npx wrangler r2 bucket create hauntshot-shots
-# put real database_id into apps/api/wrangler.jsonc
+npx wrangler d1 migrations apply hauntshot --remote
 npm run deploy -w api
 ```
+
+Viewer links are built from the request origin, so a deployed Worker hands out
+its own URLs with no extra config.
 
 ## Status
 

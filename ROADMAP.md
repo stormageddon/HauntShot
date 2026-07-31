@@ -34,6 +34,20 @@ storage bill and a privacy claim we don't yet honor: the viewer page tells peopl
 their screenshot is "deleted automatically after 24 hours". Needs a scheduled
 purge over expired rows plus their objects.
 
+## Capture
+
+**Capture leans on each OS's own tool.** macOS shells out to `screencapture`,
+Windows drives the `ms-screenclip` overlay and fishes the result out of the
+clipboard. That means no Linux path at all, a selection UI we don't control or
+brand, and on Windows a cancel we can only infer — from the overlay process
+disappearing without a clipboard write. Owning the region select instead (a
+transparent fullscreen window, drag to crop a frame grabbed in-process) would
+make capture behave the same everywhere and remove the clipboard round-trip.
+
+**The Windows tray icon is the stock Tauri logo.** The `HS` capture-frame glyph
+is a macOS alpha template, so the tray falls back to the default window icon
+elsewhere. Windows needs a full-color variant.
+
 ## Shipping and updates
 
 **App update path.** There's no way to update an installed client. Whatever a
