@@ -32,8 +32,15 @@ struct ShareFailure {
     code: String,
 }
 
+/// Env var at run time for local work, baked in at build time for anything we
+/// hand to someone else, and localhost when neither says otherwise.
 fn api_base() -> String {
-    std::env::var("HAUNTSHOT_API_BASE").unwrap_or_else(|_| DEFAULT_API_BASE.to_string())
+    if let Ok(base) = std::env::var("HAUNTSHOT_API_BASE") {
+        return base;
+    }
+    option_env!("HAUNTSHOT_API_BASE")
+        .unwrap_or(DEFAULT_API_BASE)
+        .to_string()
 }
 
 #[tauri::command]

@@ -1,0 +1,55 @@
+name: Windows build
+
+# Tauri can't cross-compile, so Windows installers are built here rather than
+# on anyone's Mac.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "API the build should talk to"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      # Baked into both halves of the app: the panel's fetches and the Rust
+      # uploader. Set the HAUNTSHOT_API_BASE repo variable once the Worker is
+      # deployed; until then builds point at a local API.
+      API_BASE: ${{ inputs.api_base || vars.HAUNTSHOT_API_BASE || 'http://127.0.0.1:8787' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - run: npm ci
+
+      - name: Build installers
+        run: npm run build:desktop
+        env:
+          VITE_API_BASE: ${{ env.API_BASE }}
+          HAUNTSHOT_API_BASE: ${{ env.API_BASE }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hauntshot-windows
+          if-no-files-found: error
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
