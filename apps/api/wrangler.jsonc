@@ -14,6 +14,11 @@
   "vars": {
     "ENVIRONMENT": "dev"
   },
+  // Pinned: the desktop client defaults to 127.0.0.1:8787, and wrangler
+  // otherwise slides to the next free port when one is already bound.
+  "dev": {
+    "port": 8787
+  },
   "d1_databases": [
     {
       "binding": "DB",
