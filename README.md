@@ -79,6 +79,6 @@ npm run deploy -w api
 
 ## Status
 
-Working: menubar tray + panel; region capture → upload → clipboard → toast; history list; viewer + OG tags; free live quota.
+Working: menubar tray + panel; region capture → upload → clipboard → toast; history list with previews; viewer + OG tags; free live quota.
 
-Next: Stripe, expire/purge cron, production CF IDs.
+Next: see [ROADMAP.md](ROADMAP.md) — Stripe and real accounts, expiry purge, product page, production CF IDs.
