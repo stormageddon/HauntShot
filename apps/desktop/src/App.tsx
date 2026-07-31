@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import type {
   ListShotsResponse,
@@ -75,7 +76,18 @@ export default function App() {
   }, [deviceId, refresh]);
 
   useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") void getCurrentWindow().hide();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
     const unsubs = [
+      listen("panel-shown", () => {
+        void refresh();
+      }),
       listen<string>("share-status", (e) => {
         setBusy(true);
         setStatus(e.payload);
@@ -145,7 +157,7 @@ export default function App() {
 
       <p className="hint">
         Unexpired captures only. {DEFAULT_HOTKEY} or Capture → upload → link on
-        clipboard.
+        clipboard. Esc hides this panel.
       </p>
 
       {error ? <p className="error">{error}</p> : null}

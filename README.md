@@ -30,6 +30,17 @@ packages/shared   Shared types + constants (limits, hotkey, TTL)
 - Hotkey default: **Control+Shift+5** (avoids macOS ⌘⇧5 / Windows Win+Shift+S)
 - Desktop talks only to versioned HTTPS `/v1` — never to R2/D1 directly
 
+## Desktop shell
+
+Menubar/tray app — no Dock or taskbar icon.
+
+- Left-click the tray icon toggles the panel, anchored under (macOS) or above (Windows) the icon
+- Right-click opens the menu: Capture, Open HauntShot, Quit
+- The panel hides on `Esc` or when it loses focus
+- macOS ships `LSUIElement`; dev runs use `ActivationPolicy::Accessory`
+- The tray glyph (a capture frame around `HS`, dissolving to the right) is generated
+  geometrically — rerun `python3 tools/gen-tray-icon.py` after changing it
+
 ## Migration boundaries
 
 - `StoragePort` + our-domain URLs (`/s/:id`, `/i/:id`) — not raw `r2.dev`
@@ -63,6 +74,6 @@ npm run deploy -w api
 
 ## Status
 
-Working: region capture → upload → clipboard → toast; history list; viewer + OG tags; free live quota.
+Working: menubar tray + panel; region capture → upload → clipboard → toast; history list; viewer + OG tags; free live quota.
 
-Next: system tray, Stripe, expire/purge cron, production CF IDs.
+Next: Stripe, expire/purge cron, production CF IDs.

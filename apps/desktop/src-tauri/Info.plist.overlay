@@ -4,5 +4,7 @@
 <dict>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>HauntShot captures your screen to create temporary share links that expire after 24 hours.</string>
+	<key>LSUIElement</key>
+	<true/>
 </dict>
 </plist>

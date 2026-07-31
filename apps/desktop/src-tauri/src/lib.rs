@@ -1,4 +1,5 @@
 mod capture;
+mod tray;
 mod upload;
 
 use capture::CaptureOutcome;
@@ -221,10 +222,29 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![get_device_id, capture_and_share])
         .setup(|app| {
+            // Menubar app: no Dock icon, no app switcher entry.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             if let Err(e) = register_hotkey(app.handle()) {
                 eprintln!("[hauntshot] {e}");
             }
+            if let Err(e) = tray::build(app.handle()) {
+                eprintln!("[hauntshot] tray unavailable: {e}");
+            }
             Ok(())
+        })
+        .on_window_event(|window, event| match event {
+            // The panel belongs to the tray icon — closing or clicking away parks it.
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+            tauri::WindowEvent::Focused(false) => {
+                tray::note_blur_hide();
+                let _ = window.hide();
+            }
+            _ => {}
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
