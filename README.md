@@ -37,6 +37,8 @@ Menubar/tray app — no Dock or taskbar icon.
 - Left-click the tray icon toggles the panel, anchored under (macOS) or above (Windows) the icon
 - Right-click opens the menu: Capture, Open HauntShot, Quit
 - The panel hides on `Esc` or when it loses focus
+- List rows show a thumbnail built from the capture itself and cached under the app
+  data dir, so previews never re-download full screenshots
 - A capture shows its own HUD under the tray icon rather than a system notification:
   in dev those are posted under Terminal's bundle id, and in release they're one
   System Settings toggle away from silence

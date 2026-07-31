@@ -25,6 +25,7 @@ export default function App() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [shots, setShots] = useState<ShotSummary[]>([]);
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string>(`Hotkey: ${DEFAULT_HOTKEY}`);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -73,6 +74,27 @@ export default function App() {
   useEffect(() => {
     if (deviceId) void refresh();
   }, [deviceId, refresh]);
+
+  // Keyed on the ids themselves so a refresh returning the same shots is a no-op.
+  const shotIds = shots.map((s) => s.id).join(",");
+  useEffect(() => {
+    const ids = shotIds ? shotIds.split(",") : [];
+    if (ids.length === 0) {
+      setThumbs({});
+      return;
+    }
+    let cancelled = false;
+    invoke<Record<string, string>>("shot_thumbnails", { ids })
+      .then((found) => {
+        if (!cancelled) setThumbs(found);
+      })
+      .catch(() => {
+        // A missing preview is not worth interrupting the list for.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shotIds]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -173,6 +195,11 @@ export default function App() {
         ) : (
           shots.map((shot) => (
             <div className="row" key={shot.id}>
+              {thumbs[shot.id] ? (
+                <img className="thumb" src={thumbs[shot.id]} alt="" />
+              ) : (
+                <div className="thumb empty-thumb" aria-hidden="true" />
+              )}
               <div className="meta">
                 <div className="ttl">{remainingLabel(shot.expiresAt)}</div>
                 <div className="url">{shot.viewerPath}</div>

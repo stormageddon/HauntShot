@@ -1,4 +1,5 @@
 mod capture;
+mod thumbs;
 mod toast;
 mod tray;
 mod upload;
@@ -92,6 +93,14 @@ fn copy_link(app: AppHandle, url: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn shot_thumbnails(
+    app: AppHandle,
+    ids: Vec<String>,
+) -> Result<std::collections::HashMap<String, String>, String> {
+    Ok(thumbs::collect(&app, &api_base(), &ids).await)
+}
+
 fn copy_to_clipboard(app: &AppHandle, url: &str) -> Result<(), String> {
     app.clipboard().write_text(url).map_err(|e| {
         let msg = format!("Clipboard write failed: {e}");
@@ -140,6 +149,7 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
     let device_id = get_device_id(app.clone())?;
     let base = api_base();
 
+    let thumb_source = png.clone();
     let created = match upload::upload_png(&base, &device_id, png).await {
         Ok(r) => r,
         Err(upload::UploadError::QuotaExceeded) => {
@@ -167,6 +177,15 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
             return Err(msg);
         }
     };
+
+    // Off the critical path — the link shouldn't wait on a resize.
+    let thumb_app = app.clone();
+    let thumb_id = created.shot.id.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Err(e) = thumbs::store(&thumb_app, &thumb_id, &thumb_source) {
+            eprintln!("[hauntshot] thumbnail failed: {e}");
+        }
+    });
 
     let viewer_url = created
         .shot
@@ -222,7 +241,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_device_id,
             capture_and_share,
-            copy_link
+            copy_link,
+            shot_thumbnails
         ])
         .setup(|app| {
             // Menubar app: no Dock icon, no app switcher entry.
