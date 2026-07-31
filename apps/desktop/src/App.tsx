@@ -8,11 +8,15 @@ import type {
   QuotaStatus,
 } from "@hauntshot/shared";
 import { DEFAULT_HOTKEY, FREE_LIVE_LIMIT } from "@hauntshot/shared";
-import Settings, { GearIcon } from "./Settings";
+import Settings from "./Settings";
+import { CaptureIcon, GearIcon } from "./icons";
 import "./App.css";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE?.toString() || "http://127.0.0.1:8787";
+
+/** Short enough that a minute-resolution countdown never looks wrong. */
+const REFRESH_INTERVAL_MS = 30_000;
 
 function remainingLabel(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
@@ -28,6 +32,7 @@ export default function App() {
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(false);
   const [status, setStatus] = useState<string>(`Hotkey: ${DEFAULT_HOTKEY}`);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -73,9 +78,23 @@ export default function App() {
       .catch((e) => setError(String(e)));
   }, []);
 
+  // The panel is only ever visible while focused, so focus tracks visibility.
   useEffect(() => {
-    if (deviceId) void refresh();
-  }, [deviceId, refresh]);
+    const unlisten = getCurrentWindow().onFocusChanged(({ payload }) =>
+      setPanelVisible(payload),
+    );
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  }, []);
+
+  // Expiry labels age in place, so keep polling while someone is looking.
+  useEffect(() => {
+    if (!panelVisible) return;
+    void refresh();
+    const timer = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [panelVisible, refresh]);
 
   // Keyed on the ids themselves so a refresh returning the same shots is a no-op.
   const shotIds = shots.map((s) => s.id).join(",");
@@ -113,7 +132,7 @@ export default function App() {
     const unsubs = [
       listen("panel-shown", () => {
         setSettingsOpen(false);
-        void refresh();
+        setPanelVisible(true);
       }),
       listen<string>("share-status", (e) => {
         setBusy(true);
@@ -224,11 +243,16 @@ export default function App() {
       )}
 
       <footer className="footer">
-        <button type="button" disabled={busy} onClick={() => void capture()}>
-          {busy ? "Working…" : "Capture"}
-        </button>
-        <button type="button" onClick={() => void refresh()}>
-          Refresh
+        <button
+          type="button"
+          className="capture-button"
+          disabled={busy}
+          aria-label="Capture"
+          aria-busy={busy}
+          title={`Capture · ${DEFAULT_HOTKEY}`}
+          onClick={() => void capture()}
+        >
+          <CaptureIcon />
         </button>
         <button
           type="button"
