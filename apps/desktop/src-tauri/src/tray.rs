@@ -7,6 +7,7 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, Rect, WebviewWindow};
 
 pub const PANEL_LABEL: &str = "main";
+const TRAY_ID: &str = "main";
 
 /// Space between the menubar/taskbar icon and the panel edge.
 const PANEL_GAP: f64 = 6.0;
@@ -55,7 +56,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         ],
     )?;
 
-    TrayIconBuilder::with_id("main")
+    TrayIconBuilder::with_id(TRAY_ID)
         .icon(tray_icon(app)?)
         .icon_as_template(cfg!(target_os = "macos"))
         .tooltip("HauntShot")
@@ -132,9 +133,14 @@ fn reveal(window: &WebviewWindow, anchor: Option<Rect>) {
     let _ = window.emit("panel-shown", ());
 }
 
-/// Centers the panel under (macOS) or above (Windows/Linux) the tray icon,
+/// Where the tray icon currently sits, for callers with no click to anchor to.
+pub fn icon_rect(app: &AppHandle) -> Option<Rect> {
+    app.tray_by_id(TRAY_ID)?.rect().ok().flatten()
+}
+
+/// Centers the window under (macOS) or above (Windows/Linux) the tray icon,
 /// keeping it inside the monitor the icon lives on.
-fn anchor_to_icon(window: &WebviewWindow, anchor: Rect) -> tauri::Result<()> {
+pub fn anchor_to_icon(window: &WebviewWindow, anchor: Rect) -> tauri::Result<()> {
     let scale = window.scale_factor()?;
     let icon_pos = anchor.position.to_physical::<f64>(scale);
     let icon_size = anchor.size.to_physical::<f64>(scale);

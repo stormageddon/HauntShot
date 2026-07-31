@@ -37,6 +37,9 @@ Menubar/tray app — no Dock or taskbar icon.
 - Left-click the tray icon toggles the panel, anchored under (macOS) or above (Windows) the icon
 - Right-click opens the menu: Capture, Open HauntShot, Quit
 - The panel hides on `Esc` or when it loses focus
+- A capture shows its own HUD under the tray icon rather than a system notification:
+  in dev those are posted under Terminal's bundle id, and in release they're one
+  System Settings toggle away from silence
 - macOS ships `LSUIElement`; dev runs use `ActivationPolicy::Accessory`
 - The tray glyph (a capture frame around `HS`, dissolving to the right) is generated
   geometrically — rerun `python3 tools/gen-tray-icon.py` after changing it

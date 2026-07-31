@@ -1,0 +1,50 @@
+:root {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: #e8e8e8;
+  background: #161616;
+  line-height: 1.35;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.toast {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  gap: 2px;
+  /* Undecorated HUD — draw its own edge, like the panel. */
+  border: 1px solid #2f2f2f;
+  border-left: 3px solid #4c8dd8;
+}
+
+.toast.error {
+  border-left-color: #d85c5c;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail {
+  font-size: 11px;
+  color: #8a8a8a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast.error .title {
+  color: #ff8f8f;
+}

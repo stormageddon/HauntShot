@@ -1,4 +1,5 @@
 mod capture;
+mod toast;
 mod tray;
 mod upload;
 
@@ -8,7 +9,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_global_shortcut::{Builder as ShortcutBuilder, GlobalShortcutExt, ShortcutState};
-use tauri_plugin_notification::NotificationExt;
 
 const DEFAULT_HOTKEY: &str = "Control+Shift+5";
 const DEFAULT_API_BASE: &str = "http://127.0.0.1:8787";
@@ -106,7 +106,7 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
             } else {
                 e
             };
-            notify_fail(&app, &friendly);
+            toast::error(&app, "Capture failed", &friendly);
             let _ = app.emit(
                 "share-failed",
                 ShareFailure {
@@ -127,7 +127,7 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         Ok(r) => r,
         Err(upload::UploadError::QuotaExceeded) => {
             let msg = upload::UploadError::QuotaExceeded.to_string();
-            notify_fail(&app, &msg);
+            toast::error(&app, "Free live limit reached", "Upgrade for unlimited");
             let _ = app.emit(
                 "share-failed",
                 ShareFailure {
@@ -139,7 +139,7 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         }
         Err(e) => {
             let msg = e.to_string();
-            notify_fail(&app, "Couldn’t upload — link was not copied");
+            toast::error(&app, "Couldn’t upload", &msg);
             let _ = app.emit(
                 "share-failed",
                 ShareFailure {
@@ -156,16 +156,13 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         .viewer_url
         .unwrap_or_else(|| format!("{base}{}", created.shot.viewer_path));
 
-    app.clipboard()
-        .write_text(&viewer_url)
-        .map_err(|e| format!("Clipboard write failed: {e}"))?;
+    if let Err(e) = app.clipboard().write_text(&viewer_url) {
+        let msg = format!("Clipboard write failed: {e}");
+        toast::error(&app, "Couldn’t copy the link", &msg);
+        return Err(msg);
+    }
 
-    let _ = app
-        .notification()
-        .builder()
-        .title("Link copied")
-        .body("Expires in 24h")
-        .show();
+    toast::ok(&app, "Link copied · expires in 24h", &viewer_url);
 
     let success = ShareSuccess {
         viewer_url,
@@ -174,15 +171,6 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
     };
     let _ = app.emit("share-success", success.clone());
     Ok(success)
-}
-
-fn notify_fail(app: &AppHandle, body: &str) {
-    let _ = app
-        .notification()
-        .builder()
-        .title("HauntShot")
-        .body(body)
-        .show();
 }
 
 fn register_hotkey(app: &AppHandle) -> Result<(), String> {
@@ -217,7 +205,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_notification::init())
         .plugin(ShortcutBuilder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![get_device_id, capture_and_share])
@@ -234,17 +221,23 @@ pub fn run() {
             }
             Ok(())
         })
-        .on_window_event(|window, event| match event {
-            // The panel belongs to the tray icon — closing or clicking away parks it.
-            tauri::WindowEvent::CloseRequested { api, .. } => {
-                api.prevent_close();
-                let _ = window.hide();
+        .on_window_event(|window, event| {
+            // Only the panel is dismissible this way; the HUD manages itself.
+            if window.label() != tray::PANEL_LABEL {
+                return;
             }
-            tauri::WindowEvent::Focused(false) => {
-                tray::note_blur_hide();
-                let _ = window.hide();
+            match event {
+                // The panel belongs to the tray icon — closing or clicking away parks it.
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+                tauri::WindowEvent::Focused(false) => {
+                    tray::note_blur_hide();
+                    let _ = window.hide();
+                }
+                _ => {}
             }
-            _ => {}
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -7,6 +8,16 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+
+  build: {
+    rollupOptions: {
+      input: {
+        // The panel and the capture HUD are separate Tauri windows.
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        toast: fileURLToPath(new URL("./toast.html", import.meta.url)),
+      },
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
