@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Tauri / Rust
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/schemas/
+
+# Cloudflare
+apps/api/.wrangler/
+apps/api/worker-configuration.d.ts
+
+# Prefer root lockfile only
+apps/*/package-lock.json
+
+*.log
+.vscode/*
+!.vscode/extensions.json

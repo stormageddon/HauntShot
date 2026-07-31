@@ -1,0 +1,24 @@
+{
+  "name": "hauntshot",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Temporary screenshot sharing — capture, link, expire",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stormageddon/HauntShot.git"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w api",
+    "dev:desktop": "npm run tauri -w desktop -- dev",
+    "build:api": "npm run deploy -w api -- --dry-run",
+    "build:desktop": "npm run tauri -w desktop -- build",
+    "typecheck": "npm run typecheck -w @hauntshot/shared && npm run cf-typegen -w api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,35 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hauntshot-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ENVIRONMENT": "dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hauntshot",
+      "database_id": "local-hauntshot-db",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "hauntshot-shots"
+    }
+  ]
+  /**
+   * Production: replace database_id with real D1 id from `wrangler d1 create hauntshot`
+   * and ensure R2 bucket exists via `wrangler r2 bucket create hauntshot-shots`.
+   */
+}
