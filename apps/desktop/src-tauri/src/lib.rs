@@ -93,6 +93,13 @@ fn copy_link(app: AppHandle, url: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Rust owns the capture lifecycle, so the panel asks it rather than trusting
+/// events it may have missed while hidden.
+#[tauri::command]
+fn capture_in_flight() -> bool {
+    CAPTURE_IN_FLIGHT.load(Ordering::SeqCst)
+}
+
 #[tauri::command]
 async fn shot_thumbnails(
     app: AppHandle,
@@ -123,7 +130,8 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
     {
         Ok(CaptureOutcome::Captured(bytes)) => bytes,
         Ok(CaptureOutcome::Cancelled) => {
-            let _ = app.emit("share-status", "Capture cancelled");
+            // Terminal, but not a failure — the panel needs it to stop waiting.
+            let _ = app.emit("share-cancelled", ());
             return Err("cancelled".into());
         }
         Err(e) => {
@@ -241,6 +249,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_device_id,
             capture_and_share,
+            capture_in_flight,
             copy_link,
             shot_thumbnails
         ])

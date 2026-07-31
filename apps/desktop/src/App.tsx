@@ -18,6 +18,8 @@ const API_BASE =
 /** Short enough that a minute-resolution countdown never looks wrong. */
 const REFRESH_INTERVAL_MS = 30_000;
 
+const IDLE_STATUS = `Hotkey: ${DEFAULT_HOTKEY}`;
+
 function remainingLabel(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
   if (ms <= 0) return "expired";
@@ -33,9 +35,22 @@ export default function App() {
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
-  const [status, setStatus] = useState<string>(`Hotkey: ${DEFAULT_HOTKEY}`);
+  const [status, setStatus] = useState<string>(IDLE_STATUS);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
+
+  /**
+   * A capture can start, finish, or be cancelled while the panel is hidden, so
+   * on every open take Rust's word for it rather than the last event seen.
+   */
+  const resync = useCallback(async () => {
+    const running = await invoke<boolean>("capture_in_flight").catch(() => false);
+    setBusy(running);
+    if (!running) {
+      setStatus(IDLE_STATUS);
+      setError("");
+    }
+  }, []);
 
   const api = useCallback(
     async (path: string, init?: RequestInit) => {
@@ -133,10 +148,16 @@ export default function App() {
       listen("panel-shown", () => {
         setSettingsOpen(false);
         setPanelVisible(true);
+        void resync();
       }),
       listen<string>("share-status", (e) => {
         setBusy(true);
         setStatus(e.payload);
+        setError("");
+      }),
+      listen("share-cancelled", () => {
+        setBusy(false);
+        setStatus("Capture cancelled");
         setError("");
       }),
       listen<{ viewerUrl: string }>("share-success", (e) => {
@@ -159,7 +180,7 @@ export default function App() {
     return () => {
       void Promise.all(unsubs).then((fns) => fns.forEach((u) => u()));
     };
-  }, [refresh]);
+  }, [refresh, resync]);
 
   async function capture() {
     setBusy(true);
