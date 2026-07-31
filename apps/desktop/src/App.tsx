@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import type {
   ListShotsResponse,
   ShotSummary,
@@ -139,8 +138,13 @@ export default function App() {
 
   async function copyLink(shot: ShotSummary) {
     const url = shot.viewerUrl ?? `${API_BASE}${shot.viewerPath}`;
-    await writeText(url);
-    setStatus("Link copied");
+    try {
+      await invoke("copy_link", { url });
+      setError("");
+      setStatus(`Link copied · ${url}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   }
 
   const liveLabel =

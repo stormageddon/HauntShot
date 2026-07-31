@@ -83,6 +83,23 @@ async fn capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
     run_capture_and_share(app).await
 }
 
+/// The webview has no clipboard permission of its own — copying goes through
+/// here so every "Link copied" comes from the same place.
+#[tauri::command]
+fn copy_link(app: AppHandle, url: String) -> Result<(), String> {
+    copy_to_clipboard(&app, &url)?;
+    toast::ok(&app, "Link copied", &url);
+    Ok(())
+}
+
+fn copy_to_clipboard(app: &AppHandle, url: &str) -> Result<(), String> {
+    app.clipboard().write_text(url).map_err(|e| {
+        let msg = format!("Clipboard write failed: {e}");
+        toast::error(app, "Couldn’t copy the link", &msg);
+        msg
+    })
+}
+
 async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
     let Some(_guard) = CaptureGuard::try_acquire() else {
         let _ = app.emit("share-status", "Capture already in progress");
@@ -156,12 +173,7 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         .viewer_url
         .unwrap_or_else(|| format!("{base}{}", created.shot.viewer_path));
 
-    if let Err(e) = app.clipboard().write_text(&viewer_url) {
-        let msg = format!("Clipboard write failed: {e}");
-        toast::error(&app, "Couldn’t copy the link", &msg);
-        return Err(msg);
-    }
-
+    copy_to_clipboard(&app, &viewer_url)?;
     toast::ok(&app, "Link copied · expires in 24h", &viewer_url);
 
     let success = ShareSuccess {
@@ -207,7 +219,11 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(ShortcutBuilder::new().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_device_id, capture_and_share])
+        .invoke_handler(tauri::generate_handler![
+            get_device_id,
+            capture_and_share,
+            copy_link
+        ])
         .setup(|app| {
             // Menubar app: no Dock icon, no app switcher entry.
             #[cfg(target_os = "macos")]
