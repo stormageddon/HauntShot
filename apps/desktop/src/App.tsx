@@ -8,6 +8,7 @@ import type {
   QuotaStatus,
 } from "@hauntshot/shared";
 import { DEFAULT_HOTKEY, FREE_LIVE_LIMIT } from "@hauntshot/shared";
+import Settings, { GearIcon } from "./Settings";
 import "./App.css";
 
 const API_BASE =
@@ -26,6 +27,7 @@ export default function App() {
   const [shots, setShots] = useState<ShotSummary[]>([]);
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [status, setStatus] = useState<string>(`Hotkey: ${DEFAULT_HOTKEY}`);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -98,15 +100,19 @@ export default function App() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") void getCurrentWindow().hide();
+      if (e.key !== "Escape") return;
+      // Escape backs out of settings first, then parks the panel.
+      if (settingsOpen) setSettingsOpen(false);
+      else void getCurrentWindow().hide();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [settingsOpen]);
 
   useEffect(() => {
     const unsubs = [
       listen("panel-shown", () => {
+        setSettingsOpen(false);
         void refresh();
       }),
       listen<string>("share-status", (e) => {
@@ -177,40 +183,45 @@ export default function App() {
   return (
     <main className="shell">
       <header className="header">
-        <strong>HauntShot</strong>
-        <span className="quota">{liveLabel}</span>
+        <strong>{settingsOpen ? "Settings" : "HauntShot"}</strong>
+        {settingsOpen ? null : <span className="quota">{liveLabel}</span>}
       </header>
 
-      <p className="hint">
-        Unexpired captures only. {DEFAULT_HOTKEY} or Capture → upload → link on
-        clipboard. Esc hides this panel.
-      </p>
+      {settingsOpen ? (
+        <p className="hint">
+          Nothing here is wired up yet — these are placeholders.
+        </p>
+      ) : null}
 
-      {error ? <p className="error">{error}</p> : null}
-      {status ? <p className="status">{status}</p> : null}
+      {settingsOpen ? null : error ? <p className="error">{error}</p> : null}
+      {settingsOpen ? null : status ? <p className="status">{status}</p> : null}
 
-      <section className="list">
-        {shots.length === 0 ? (
-          <p className="empty">No live screenshots — capture to share</p>
-        ) : (
-          shots.map((shot) => (
-            <div className="row" key={shot.id}>
-              {thumbs[shot.id] ? (
-                <img className="thumb" src={thumbs[shot.id]} alt="" />
-              ) : (
-                <div className="thumb empty-thumb" aria-hidden="true" />
-              )}
-              <div className="meta">
-                <div className="ttl">{remainingLabel(shot.expiresAt)}</div>
-                <div className="url">{shot.viewerPath}</div>
+      {settingsOpen ? (
+        <Settings />
+      ) : (
+        <section className="list">
+          {shots.length === 0 ? (
+            <p className="empty">No live screenshots — capture to share</p>
+          ) : (
+            shots.map((shot) => (
+              <div className="row" key={shot.id}>
+                {thumbs[shot.id] ? (
+                  <img className="thumb" src={thumbs[shot.id]} alt="" />
+                ) : (
+                  <div className="thumb empty-thumb" aria-hidden="true" />
+                )}
+                <div className="meta">
+                  <div className="ttl">{remainingLabel(shot.expiresAt)}</div>
+                  <div className="url">{shot.viewerPath}</div>
+                </div>
+                <button type="button" onClick={() => void copyLink(shot)}>
+                  Copy link
+                </button>
               </div>
-              <button type="button" onClick={() => void copyLink(shot)}>
-                Copy link
-              </button>
-            </div>
-          ))
-        )}
-      </section>
+            ))
+          )}
+        </section>
+      )}
 
       <footer className="footer">
         <button type="button" disabled={busy} onClick={() => void capture()}>
@@ -219,7 +230,15 @@ export default function App() {
         <button type="button" onClick={() => void refresh()}>
           Refresh
         </button>
-        <span className="muted">{API_BASE}</span>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={settingsOpen ? "Back to captures" : "Settings"}
+          aria-pressed={settingsOpen}
+          onClick={() => setSettingsOpen((open) => !open)}
+        >
+          <GearIcon />
+        </button>
       </footer>
     </main>
   );

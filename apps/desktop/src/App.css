@@ -29,6 +29,43 @@ body,
   align-items: center;
 }
 
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  color: #b0b0b0;
+  background: transparent;
+  border-color: transparent;
+}
+
+.icon-button:hover {
+  color: #eee;
+  background: #222;
+  border-color: #3a3a3a;
+}
+
+.footer .icon-button {
+  margin-left: auto;
+}
+
+.icon-button[aria-pressed="true"] {
+  color: #9ecbff;
+}
+
+.soon {
+  font-size: 10px;
+  font-weight: 500;
+  color: #8a8a8a;
+  border: 1px solid #333;
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  vertical-align: 1px;
+}
+
 .quota {
   font-size: 12px;
   color: #b0b0b0;
@@ -40,14 +77,12 @@ body,
 .hint,
 .status,
 .error,
-.empty,
-.muted {
+.empty {
   font-size: 12px;
   margin: 0;
 }
 
 .hint,
-.muted,
 .empty {
   color: #8a8a8a;
 }
@@ -130,7 +165,6 @@ button:hover {
 
 .footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
