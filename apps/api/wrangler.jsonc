@@ -23,7 +23,7 @@
     {
       "binding": "DB",
       "database_name": "hauntshot",
-      "database_id": "local-hauntshot-db",
+      "database_id": "c3ae95ab-29f5-4d09-9937-47c7c5a92992",
       "migrations_dir": "migrations"
     }
   ],
@@ -33,8 +33,4 @@
       "bucket_name": "hauntshot-shots"
     }
   ]
-  /**
-   * Production: replace database_id with real D1 id from `wrangler d1 create hauntshot`
-   * and ensure R2 bucket exists via `wrangler r2 bucket create hauntshot-shots`.
-   */
 }
