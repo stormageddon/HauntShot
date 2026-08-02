@@ -72,19 +72,23 @@ On Windows, capture drives the `ms-screenclip` overlay (the one behind Win+Shift
 and waits for a *new* clipboard image, so cancelling can't upload something you
 copied earlier. There is no headless region capture on Windows to use instead.
 
-## Windows builds
+## Desktop builds
 
-Tauri can't cross-compile, so Windows installers come from the `Windows build`
-workflow (`windows-latest`), which uploads the MSI and NSIS artifacts on every
-push to `main` and on manual dispatch.
+Tauri can't cross-compile, so installers come from CI:
 
-The API base is baked in at build time from the `HAUNTSHOT_API_BASE` repo
+| Platform | Workflow | Artifact |
+| --- | --- | --- |
+| Windows | `Windows build` (`windows-latest`) | MSI + NSIS |
+| macOS | `macOS build` (`macos-latest`) | DMG + `.app` |
+
+Both bake the API base in at build time from the `HAUNTSHOT_API_BASE` repo
 variable — set it once the Worker is deployed, or pass one to a manual run.
-Without it a build points at `127.0.0.1:8787`, which only works if the tester
-is running the API themselves. A runtime `HAUNTSHOT_API_BASE` env var still
-wins, for local work.
+Without it a build points at `127.0.0.1:8787`. A runtime `HAUNTSHOT_API_BASE`
+env var still wins, for local work.
 
-Installers are unsigned, so Windows SmartScreen will warn on first run.
+Installers are unsigned: Windows SmartScreen will warn, and macOS Gatekeeper
+will block the first open until you right-click → Open (or clear the quarantine
+flag). The local Mac DMG is Apple Silicon (`aarch64`) only.
 
 ## Deploy the API
 

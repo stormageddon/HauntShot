@@ -1,0 +1,52 @@
+name: macOS build
+
+# Same bake-in as Windows: the installers talk to whatever HAUNTSHOT_API_BASE
+# the repo (or a manual run) says, defaulting to localhost for local smoke tests.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "API the build should talk to"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    env:
+      API_BASE: ${{ inputs.api_base || vars.HAUNTSHOT_API_BASE || 'http://127.0.0.1:8787' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - run: npm ci
+
+      - name: Build app + DMG
+        run: npm run build:desktop
+        env:
+          VITE_API_BASE: ${{ env.API_BASE }}
+          HAUNTSHOT_API_BASE: ${{ env.API_BASE }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hauntshot-macos
+          if-no-files-found: error
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/macos/*.app
