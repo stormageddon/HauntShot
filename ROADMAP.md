@@ -64,6 +64,6 @@ does, the ephemeral-by-default promise, pricing, and downloads for Mac and
 Windows. Also the natural home for the privacy and retention claims we make in
 the viewer.
 
-**Production Cloudflare resources.** The D1 id and R2 bucket in
-`apps/api/wrangler.jsonc` are local dev placeholders; production needs real ones
-plus the domains registered.
+**Production Cloudflare resources.** D1, R2, and the Worker are live at
+`hauntshot-api.hauntshot.workers.dev`. Still needed: a real domain
+(hauntshot.com / .app) pointed at the Worker instead of the workers.dev URL.
