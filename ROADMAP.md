@@ -1,93 +1,137 @@
-# Future work
+# Roadmap
 
-Known gaps and next moves, with enough context to pick any of them up cold.
-Nothing here is scheduled or ordered — it's a list, not a plan.
+Product goals for V1: Mac + Windows tray app; capture → HTTPS link → 24h
+expiry; free tier with a real limit; paid unlimited at $4.99/mo or $29.99/yr;
+view-only; branded hauntshot.com links; downloadable from a real product page.
 
-## Quota and accounts
+Nothing here is scheduled day-by-day — but the buckets are ordered roughly by
+dependency. Critical Path is what has to be true before calling it launched.
+V2 is everything else that can wait without breaking the product promise.
 
-**Device identity is self-asserted.** The free limit keys off the
-`X-HauntShot-Device-Id` header, which the client generates itself and any string
-matching `[a-zA-Z0-9_-]{8,128}` is accepted and auto-created on first use.
-Deleting that file — or just sending a different header — grants a fresh ten
-slots. Nothing is signed or attested, so today's quota only inconveniences the
-honest. Needs an account or device-attestation story before the paid tier means
-anything.
+---
 
-**Nothing can promote a device to paid.** `getDeviceTier` reads `devices.tier`,
-which defaults to `free`, and no code path ever writes `paid`. The `users` table
-already carries the Stripe columns and `devices.user_id` exists, but nothing
-joins them. Wiring Stripe checkout and webhooks is the obvious half; the other
-half is deciding that tier belongs to a person rather than a device, since as
-written two machines get ten free links each.
+## Critical Path (required for launch)
 
-**The quota check isn't atomic.** `POST /v1/shots` counts live shots and then
-inserts, so two captures fired at once while sitting at nine live can both read
-nine and both succeed. Rare when captures come one hotkey at a time, but it's a
-real hole — close it with a conditional insert or a transaction.
+### Distribution and trust
 
-**Lower free tier to 5/day.** Today free means **10 concurrent live** shots
-(`FREE_LIVE_LIMIT`), with a slot freeing when a shot expires. Product wants
-**5 per day** instead — that's a different meter (created-in-window, not
-currently-live). Needs a new counter or daily bucket in D1, copy updates in the
-panel quota badge and settings upgrade blurb, and a clear rule for what happens
-at midnight UTC vs local time.
+**Finish hauntshot.com on the Worker.** Zone must be Active on Cloudflare,
+custom domains deployed, clients rebuilt against `https://hauntshot.com`. Share
+links that say `*.workers.dev` are not a shippable brand.
 
-## Lifecycle
+**Product page with downloads.** Landing at hauntshot.com: what it is, the
+24h promise, free vs paid pricing, Mac + Windows download buttons. Without this
+there is no acquisition surface.
 
-**Expired shots are never actually deleted.** Rows simply stop matching
-`expires_at > datetime('now')`, so links go dead on schedule, but the R2 objects
-stay forever. `R2Storage.delete` exists and has no callers. That's an accruing
-storage bill and a privacy claim we don't yet honor: the viewer page tells people
-their screenshot is "deleted automatically after 24 hours". Needs a scheduled
-purge over expired rows plus their objects.
+**Code signing.** Unsigned Windows MSIs are already being blocked as malware;
+unsigned Mac builds trip Gatekeeper. V1 needs Authenticode (Windows) and
+Developer ID + notarization (macOS). Self-signed does not count.
 
-## Capture
+**App update path (minimum viable).** A tray app that cannot be updated or
+recalled is a liability the day after launch. Ship Tauri updater (or at least a
+version check that points at the download page) with signed artifacts.
 
-**Capture leans on each OS's own tool.** macOS shells out to `screencapture`,
-Windows drives the `ms-screenclip` overlay and fishes the result out of the
-clipboard. That means no Linux path at all, a selection UI we don't control or
-brand, and on Windows a cancel we can only infer — from the overlay process
-disappearing without a clipboard write. Owning the region select instead (a
-transparent fullscreen window, drag to crop a frame grabbed in-process) would
-make capture behave the same everywhere and remove the clipboard round-trip.
+### The ephemeral promise
 
-**Print Screen should start a capture on Windows.** Muscle memory on that
-platform is the PrtSc key, not Control+Shift+5. Register it (or offer it as the
-Windows default) alongside the existing hotkey, and decide whether it replaces
-the OS clipboard screenshot or runs in addition to it.
+**Purge expired shots.** Viewer copy says screenshots are deleted after 24h;
+today only the query filter hides them — R2 objects and rows remain. Cron (or
+Queues) over expired rows + `R2Storage.delete` before launch, or the privacy
+claim is false.
 
-**The Windows tray icon is the stock Tauri logo.** The `HS` capture-frame glyph
-is a macOS alpha template, so the tray falls back to the default window icon
-elsewhere. Windows needs a full-color variant.
+**Free tier = 5/day.** Product has moved off “10 concurrent live.” Implement a
+daily meter in D1, update panel badge and upgrade copy, pick a reset timezone
+(UTC is fine if stated). Keep paid as unlimited.
 
-**The Windows build / installer icon is wrong too.** Beyond the tray, the `.exe`
-/ MSI / Start-menu identity still ships the stock Tauri assets. Swap
-`icons/icon.ico` (and the Square* store logos if we keep them) for HauntShot
-branding so installed builds don't look like a template app.
+### Paid tier that means something
 
-## Desktop shell
+**Accounts + Stripe.** Device-id quota is bypassable by deleting a file, and
+nothing can write `devices.tier = paid`. V1 needs a person (email magic-link or
+OAuth is enough), Stripe Checkout + webhooks, and tier attached to the user —
+not the device — so two machines share one paid plan. Wire the existing Settings
+“Upgrade” stub to Checkout.
 
-**Launch at login.** A menubar/tray app people have to open by hand after every
-reboot will feel broken. Add a "Start HauntShot at login" setting (macOS Login
-Items / Windows Startup folder or Task Scheduler via Tauri's autostart plugin)
-and default it on for fresh installs.
+**Privacy policy + terms.** Required for a public product page and for Stripe.
+Short and honest is fine; host them on hauntshot.com.
 
-## Shipping and updates
+### Desktop must feel like a finished tray app
 
-**App update path.** There's no way to update an installed client. Whatever a
-user downloads is what they keep running, which is a poor fit for a menubar app
-that sits untouched for months — and it means a bad build can't be recalled.
-Needs signed releases, an update feed, and in-app update checks (Tauri's updater
-plugin covers most of this), plus a decision about whether updates install
-silently or prompt.
+**Launch at login.** Default on for new installs (Tauri autostart). A menubar
+app that vanishes after reboot fails the basic job.
 
-## Product and launch
+**Windows tray + installer icons.** Stock Tauri logo in the system tray and
+Start menu is not a launchable brand. Full-color tray glyph + HauntShot
+`icon.ico` (and related store assets).
 
-**Create a product page.** A real landing page at hauntshot.com covering what it
-does, the ephemeral-by-default promise, pricing, and downloads for Mac and
-Windows. Also the natural home for the privacy and retention claims we make in
-the viewer.
+**Print Screen on Windows.** Control+Shift+5 works, but Windows muscle memory
+is PrtSc. Register it for V1 (decide: replace OS clipboard capture vs. run
+alongside).
 
-**Production Cloudflare resources.** D1, R2, and the Worker are live at
-`hauntshot-api.hauntshot.workers.dev`. Still needed: a real domain
-(hauntshot.com / .app) pointed at the Worker instead of the workers.dev URL.
+**First-run permission guidance.** Mac Screen Recording denial fails silently
+from the user’s point of view. One clear prompt/state in the panel when capture
+is blocked.
+
+### Already done (do not re-litigate)
+
+Menubar/tray panel · region capture → upload → clipboard → HUD · history with
+thumbnails · viewer + OG · free quota enforcement (old model) · CI installers ·
+API on Workers/D1/R2 · API URL bake-in for release builds.
+
+---
+
+## V2 (not required for initial launch)
+
+### Capture and platform
+
+**Own the region-select UI.** Replace `screencapture` / `ms-screenclip` with an
+in-app overlay so branding, cancel, and behavior match on every OS. Also the
+path to Linux later.
+
+**Hotkey remapping.** Settings stub exists; ship after the defaults (including
+PrtSc) are right.
+
+**Light / dark appearance.** Settings stub; follow system until then.
+
+**Intel / universal Mac builds.** Local and CI Mac artifacts are Apple Silicon
+today. Add `x86_64` or universal when Intel users show up.
+
+**Linux.** Out of MVP scope (Mac + Windows only).
+
+### Quota hardening
+
+**Atomic free-tier check.** Concurrent check-then-insert can overrun by one
+under overlap. Conditional insert / transaction once daily meter exists.
+
+**Harder device attestation.** Beyond accounts — attest installs, rate-limit
+anonymous abuse, revoke. Paid + email covers honest users for V1.
+
+### Product surface
+
+**hauntshot.app** (and any other defensive domains) pointed at the same Worker
+or redirecting to `.com`.
+
+**In-app theme polish, richer settings, about/version screen.**
+
+**Analytics / crash reporting.** Useful after there are users; not a launch
+gate.
+
+**Abuse tooling.** Manual kill switches, takedown for reported links — add when
+volume warrants.
+
+### Shipping maturity
+
+**Microsoft Store / Mac App Store.** Direct download is the V1 path; stores are
+a distribution expansion.
+
+**EV / Trusted Signing reputation, SmartScreen submission pipeline.** Signing
+gets you launchable; reputation polish continues after.
+
+---
+
+## Gaps this list closed vs the old roadmap
+
+Previously missing for a real V1: code signing / notarization, first-run
+permission UX, privacy/terms, and treating updates as launch-critical rather
+than “someday.” Print Screen, Windows icons, 5/day quota, and autostart were
+already noted and are now under Critical Path.
+
+Intentionally still V2: custom capture UI, remappable hotkeys, theme toggle,
+atomic quota, attestation theater, Linux, store listings.

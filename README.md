@@ -107,4 +107,4 @@ its own URLs with no extra config.
 
 Working: menubar tray + panel; region capture → upload → clipboard → toast; history list with previews; viewer + OG tags; free live quota; Windows installers from CI; API live at `https://hauntshot-api.hauntshot.workers.dev`.
 
-Next: see [ROADMAP.md](ROADMAP.md) — Stripe and real accounts, expiry purge, product page, custom domain.
+Next: see [ROADMAP.md](ROADMAP.md) — Critical Path for V1 vs V2.
