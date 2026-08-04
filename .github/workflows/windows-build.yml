@@ -37,6 +37,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
+          # Bump when the baked-in API base must not ride an old compile.
+          prefix-key: hauntshot-win-v2
 
       - run: npm ci
 
@@ -45,6 +47,33 @@ jobs:
         env:
           VITE_API_BASE: ${{ env.API_BASE }}
           HAUNTSHOT_API_BASE: ${{ env.API_BASE }}
+
+      # Catch a localhost bake-in before anyone downloads it. The Rust uploader
+      # is what capture uses; the panel's Vite build is checked the same way.
+      - name: Verify API base is baked in
+        shell: pwsh
+        run: |
+          $base = $env:API_BASE
+          if (-not $base -or $base -like '*127.0.0.1*') {
+            throw "Refusing to ship a build aimed at '$base'"
+          }
+          $exe = Get-ChildItem -Recurse apps/desktop/src-tauri/target/release/desktop.exe |
+            Select-Object -First 1
+          if (-not $exe) { throw 'desktop.exe missing' }
+          $haystack = [System.IO.File]::ReadAllBytes($exe.FullName)
+          $needle = [System.Text.Encoding]::UTF8.GetBytes($base)
+          $found = $false
+          for ($i = 0; $i -le $haystack.Length - $needle.Length; $i++) {
+            $ok = $true
+            for ($j = 0; $j -lt $needle.Length; $j++) {
+              if ($haystack[$i + $j] -ne $needle[$j]) { $ok = $false; break }
+            }
+            if ($ok) { $found = $true; break }
+          }
+          if (-not $found) {
+            throw "desktop.exe does not contain baked-in API base: $base"
+          }
+          Write-Host "Baked-in API base confirmed: $base"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -34,6 +34,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
+          prefix-key: hauntshot-mac-v2
 
       - run: npm ci
 
@@ -42,6 +43,19 @@ jobs:
         env:
           VITE_API_BASE: ${{ env.API_BASE }}
           HAUNTSHOT_API_BASE: ${{ env.API_BASE }}
+
+      - name: Verify API base is baked in
+        run: |
+          if [[ -z "$API_BASE" || "$API_BASE" == *127.0.0.1* ]]; then
+            echo "Refusing to ship a build aimed at '$API_BASE'" >&2
+            exit 1
+          fi
+          bin="apps/desktop/src-tauri/target/release/desktop"
+          if ! strings "$bin" | grep -F "$API_BASE" >/dev/null; then
+            echo "desktop binary missing baked-in API base: $API_BASE" >&2
+            exit 1
+          fi
+          echo "Baked-in API base confirmed: $API_BASE"
 
       - uses: actions/upload-artifact@v4
         with:
