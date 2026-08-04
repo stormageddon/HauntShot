@@ -25,7 +25,6 @@ packages/shared   Shared types + constants (limits, hotkey, TTL)
 ## Product rules (MVP)
 
 - Free: **5 captures per UTC day**; paid unlimited — **$4.99/mo** or **$29.99/yr** (Stripe TBD)
-- Paid: unlimited captures (Stripe TBD)
 - Links expire and are **purged** after **24h TTL**
 - View-only (no download)
 - Hotkey default: **Control+Shift+5** (Windows also **Print Screen**)
