@@ -85,19 +85,13 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
 }
 
 /// Menubar icons are drawn from alpha only, so macOS gets the monochrome template
-/// and every other platform keeps the full-color app icon.
-fn tray_icon(app: &AppHandle) -> tauri::Result<Image<'static>> {
+/// and Windows gets the full-color mark (taskbar doesn't use templates).
+fn tray_icon(_app: &AppHandle) -> tauri::Result<Image<'static>> {
     if cfg!(target_os = "macos") {
         return Image::from_bytes(include_bytes!("../icons/tray-template.png"));
     }
-    let icon = app
-        .default_window_icon()
-        .ok_or_else(|| tauri::Error::AssetNotFound("tray icon".into()))?;
-    Ok(Image::new_owned(
-        icon.rgba().to_vec(),
-        icon.width(),
-        icon.height(),
-    ))
+    // Windows taskbar uses a full-color glyph, not a template.
+    Image::from_bytes(include_bytes!("../icons/tray-color.png"))
 }
 
 fn start_capture(app: &AppHandle) {

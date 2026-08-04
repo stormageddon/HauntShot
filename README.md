@@ -24,10 +24,11 @@ packages/shared   Shared types + constants (limits, hotkey, TTL)
 
 ## Product rules (MVP)
 
-- Free: **10 concurrent live** screenshots; slot frees when a shot hits **24h TTL**
-- Paid: unlimited live — **$4.99/mo** or **$29.99/yr** (Stripe TBD)
+- Free: **5 captures per UTC day**; paid unlimited — **$4.99/mo** or **$29.99/yr** (Stripe TBD)
+- Paid: unlimited captures (Stripe TBD)
+- Links expire and are **purged** after **24h TTL**
 - View-only (no download)
-- Hotkey default: **Control+Shift+5** (avoids macOS ⌘⇧5 / Windows Win+Shift+S)
+- Hotkey default: **Control+Shift+5** (Windows also **Print Screen**)
 - Desktop talks only to versioned HTTPS `/v1` — never to R2/D1 directly
 
 ## Desktop shell
@@ -105,6 +106,6 @@ its own URLs with no extra config.
 
 ## Status
 
-Working: menubar tray + panel; region capture → upload → clipboard → toast; history list with previews; viewer + OG tags; free live quota; Windows installers from CI; API live at `https://hauntshot-api.hauntshot.workers.dev`.
+Working: menubar tray + panel; region capture → upload → clipboard → toast; history with previews; viewer + OG; **5 captures/day** free quota; hourly expiry purge; product/privacy/terms pages; launch-at-login; Windows Print Screen + branded icons; API at `https://app.hauntshot.com` (also `workers.dev`).
 
-Next: see [ROADMAP.md](ROADMAP.md) — Critical Path for V1 vs V2.
+Next: see [ROADMAP.md](ROADMAP.md) — Critical Path remaining: apex domain, code signing, Stripe/accounts, updater.

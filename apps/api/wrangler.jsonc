@@ -14,17 +14,18 @@
   "vars": {
     "ENVIRONMENT": "production"
   },
-  // workers.dev stays up as a fallback while nameservers propagate and for
-  // anyone still holding an old build.
   "workers_dev": true,
-  // Apex + www serve the API and viewer. Custom domains require the zone on
-  // Cloudflare; wrangler creates the proxied DNS records on deploy.
+  // Apex/www still have parking DNS from zone setup — Worker custom domains
+  // cannot attach until those A/CNAME records are deleted in the dashboard.
+  // share/api/app were attached via the Workers Domains API.
   "routes": [
-    { "pattern": "hauntshot.com", "custom_domain": true },
-    { "pattern": "www.hauntshot.com", "custom_domain": true }
+    { "pattern": "share.hauntshot.com", "custom_domain": true },
+    { "pattern": "api.hauntshot.com", "custom_domain": true },
+    { "pattern": "app.hauntshot.com", "custom_domain": true }
   ],
-  // Pinned: the desktop client defaults to 127.0.0.1:8787, and wrangler
-  // otherwise slides to the next free port when one is already bound.
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
   "dev": {
     "port": 8787
   },

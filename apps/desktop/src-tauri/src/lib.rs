@@ -12,6 +12,8 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_global_shortcut::{Builder as ShortcutBuilder, GlobalShortcutExt, ShortcutState};
 
 const DEFAULT_HOTKEY: &str = "Control+Shift+5";
+#[cfg(target_os = "windows")]
+const PRINT_SCREEN_HOTKEY: &str = "PrintScreen";
 const DEFAULT_API_BASE: &str = "http://127.0.0.1:8787";
 
 /// Prevents two interactive `screencapture -i` sessions (hotkey double-fire / overlap).
@@ -220,15 +222,27 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
 }
 
 fn register_hotkey(app: &AppHandle) -> Result<(), String> {
+    register_one_hotkey(app, DEFAULT_HOTKEY)?;
+    #[cfg(target_os = "windows")]
+    {
+        // Print Screen is what Windows users reach for; keep Control+Shift+5 too.
+        if let Err(e) = register_one_hotkey(app, PRINT_SCREEN_HOTKEY) {
+            eprintln!("[hauntshot] PrintScreen hotkey unavailable: {e}");
+        }
+    }
+    Ok(())
+}
+
+fn register_one_hotkey(app: &AppHandle, chord: &str) -> Result<(), String> {
     // Single registration path only (avoid on_shortcut + register double-fire).
-    if app.global_shortcut().is_registered(DEFAULT_HOTKEY) {
+    if app.global_shortcut().is_registered(chord) {
         app.global_shortcut()
-            .unregister(DEFAULT_HOTKEY)
-            .map_err(|e| format!("Failed to clear hotkey: {e}"))?;
+            .unregister(chord)
+            .map_err(|e| format!("Failed to clear hotkey {chord}: {e}"))?;
     }
 
     app.global_shortcut()
-        .on_shortcut(DEFAULT_HOTKEY, |app, _shortcut, event| {
+        .on_shortcut(chord, |app, _shortcut, event| {
             // Ignore key-repeat / Released — only one start per press.
             if event.state != ShortcutState::Pressed {
                 return;
@@ -241,18 +255,24 @@ fn register_hotkey(app: &AppHandle) -> Result<(), String> {
                 let _ = run_capture_and_share(handle).await;
             });
         })
-        .map_err(|e| format!("Failed to register {DEFAULT_HOTKEY}: {e}"))?;
+        .map_err(|e| format!("Failed to register {chord}: {e}"))?;
 
     Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri_plugin_autostart::MacosLauncher;
+
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(ShortcutBuilder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None::<Vec<&str>>,
+        ))
         .invoke_handler(tauri::generate_handler![
             get_device_id,
             capture_and_share,
@@ -264,6 +284,21 @@ pub fn run() {
             // Menubar app: no Dock icon, no app switcher entry.
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
+            // Opt new installs into login launch once; respect later opt-outs.
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+                let _ = std::fs::create_dir_all(&dir);
+                let marker = dir.join("autostart_initialized");
+                if !marker.exists() {
+                    let autostart = app.autolaunch();
+                    if let Err(e) = autostart.enable() {
+                        eprintln!("[hauntshot] autostart enable failed: {e}");
+                    }
+                    let _ = std::fs::write(&marker, b"1");
+                }
+            }
 
             if let Err(e) = register_hotkey(app.handle()) {
                 eprintln!("[hauntshot] {e}");

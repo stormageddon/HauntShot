@@ -14,13 +14,14 @@ V2 is everything else that can wait without breaking the product promise.
 
 ### Distribution and trust
 
-**Finish hauntshot.com on the Worker.** Zone must be Active on Cloudflare,
-custom domains deployed, clients rebuilt against `https://hauntshot.com`. Share
-links that say `*.workers.dev` are not a shippable brand.
+**Finish hauntshot.com apex on the Worker.** `app` / `api` / `share` subdomains
+are attached. Apex and `www` still have parking A/CNAME records from zone setup —
+delete those in the Cloudflare DNS dashboard, then add custom domains for
+`hauntshot.com` + `www` and rebuild clients against `https://hauntshot.com`.
 
-**Product page with downloads.** Landing at hauntshot.com: what it is, the
-24h promise, free vs paid pricing, Mac + Windows download buttons. Without this
-there is no acquisition surface.
+**Product page with downloads.** Landing, privacy, and terms ship from the
+Worker (`/`, `/privacy`, `/terms`). Download buttons still deep-link to GitHub
+Actions artifacts until signed release binaries are hosted.
 
 **Code signing.** Unsigned Windows MSIs are already being blocked as malware;
 unsigned Mac builds trip Gatekeeper. V1 needs Authenticode (Windows) and
@@ -32,14 +33,9 @@ version check that points at the download page) with signed artifacts.
 
 ### The ephemeral promise
 
-**Purge expired shots.** Viewer copy says screenshots are deleted after 24h;
-today only the query filter hides them — R2 objects and rows remain. Cron (or
-Queues) over expired rows + `R2Storage.delete` before launch, or the privacy
-claim is false.
+~~**Purge expired shots.**~~ Done — hourly cron deletes R2 objects then D1 rows.
 
-**Free tier = 5/day.** Product has moved off “10 concurrent live.” Implement a
-daily meter in D1, update panel badge and upgrade copy, pick a reset timezone
-(UTC is fine if stated). Keep paid as unlimited.
+~~**Free tier = 5/day.**~~ Done — UTC day meter; panel badge shows used/limit.
 
 ### Paid tier that means something
 
@@ -49,25 +45,19 @@ OAuth is enough), Stripe Checkout + webhooks, and tier attached to the user —
 not the device — so two machines share one paid plan. Wire the existing Settings
 “Upgrade” stub to Checkout.
 
-**Privacy policy + terms.** Required for a public product page and for Stripe.
-Short and honest is fine; host them on hauntshot.com.
+~~**Privacy policy + terms.**~~ Done — `/privacy` and `/terms` on the Worker.
 
 ### Desktop must feel like a finished tray app
 
-**Launch at login.** Default on for new installs (Tauri autostart). A menubar
-app that vanishes after reboot fails the basic job.
+~~**Launch at login.**~~ Done — enabled once on first run; Settings toggle.
 
-**Windows tray + installer icons.** Stock Tauri logo in the system tray and
-Start menu is not a launchable brand. Full-color tray glyph + HauntShot
-`icon.ico` (and related store assets).
+~~**Windows tray + installer icons.**~~ Done — color tray glyph + regenerated
+`icon.ico` from the HS mark.
 
-**Print Screen on Windows.** Control+Shift+5 works, but Windows muscle memory
-is PrtSc. Register it for V1 (decide: replace OS clipboard capture vs. run
-alongside).
+~~**Print Screen on Windows.**~~ Done — registered alongside Control+Shift+5.
 
-**First-run permission guidance.** Mac Screen Recording denial fails silently
-from the user’s point of view. One clear prompt/state in the panel when capture
-is blocked.
+~~**First-run permission guidance.**~~ Done — panel error points at Screen
+Recording settings when capture is denied.
 
 ### Already done (do not re-litigate)
 

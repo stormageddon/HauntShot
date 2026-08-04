@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { QuotaStatus, CreateShotResponse, ListShotsResponse } from "@hauntshot/shared";
-import { FREE_LIVE_LIMIT, TTL_MS } from "@hauntshot/shared";
+import { FREE_DAILY_LIMIT, TTL_MS } from "@hauntshot/shared";
 import { R2Storage } from "./adapters/r2-storage";
 import {
-  countLiveShots,
+  countCapturesToday,
   ensureDevice,
   getDeviceTier,
   getLiveShot,
@@ -13,6 +13,7 @@ import {
   quotaForDevice,
   rowToSummary,
 } from "./db/shots";
+import { landingHtml, privacyHtml, termsHtml } from "./pages";
 
 export type Env = {
   DB: D1Database;
@@ -53,6 +54,23 @@ export function createApp() {
     return c.json({ ok: true, service: "hauntshot-api", env: environment });
   });
 
+  app.get("/", (c) => c.html(landingHtml(new URL(c.req.url).origin)));
+  app.get("/privacy", (c) => c.html(privacyHtml()));
+  app.get("/terms", (c) => c.html(termsHtml()));
+  // Installers still come from GitHub Actions until we host binaries ourselves.
+  app.get("/download/mac", (c) =>
+    c.redirect(
+      "https://github.com/stormageddon/HauntShot/actions/workflows/macos-build.yml",
+      302,
+    ),
+  );
+  app.get("/download/windows", (c) =>
+    c.redirect(
+      "https://github.com/stormageddon/HauntShot/actions/workflows/windows-build.yml",
+      302,
+    ),
+  );
+
   const v1 = new Hono<{ Bindings: Env; Variables: Variables }>();
 
   v1.use("*", async (c, next) => {
@@ -88,11 +106,11 @@ export function createApp() {
     const deviceId = c.get("deviceId");
     const tier = await getDeviceTier(c.env.DB, deviceId);
     if (tier === "free") {
-      const live = await countLiveShots(c.env.DB, deviceId);
-      if (live >= FREE_LIVE_LIMIT) {
+      const used = await countCapturesToday(c.env.DB, deviceId);
+      if (used >= FREE_DAILY_LIMIT) {
         return c.json(
           {
-            error: "Free live limit reached (10). Upgrade for unlimited.",
+            error: `Free daily limit reached (${FREE_DAILY_LIMIT}). Resets at midnight UTC, or upgrade for unlimited.`,
             code: "quota_exceeded",
           },
           402,
@@ -171,6 +189,7 @@ export function createApp() {
          <body style="font-family:system-ui;max-width:32rem;margin:4rem auto;padding:0 1rem">
            <h1>This screenshot is gone</h1>
            <p>It expired or the link is invalid. Temporary links are deleted automatically after 24 hours.</p>
+         <p style="margin-top:1.5rem"><a href="/" style="color:#c9b8a0">HauntShot</a> · <a href="/privacy" style="color:#c9b8a0">Privacy</a></p>
          </body></html>`,
         404,
       );
@@ -208,7 +227,7 @@ export function createApp() {
   </header>
   <main><img src="${imageUrl}" alt="Temporary screenshot" /></main>
   <footer>
-    <span>This link is temporary · not encrypted end-to-end</span>
+    <span><a href="/privacy" style="color:#888">Privacy</a> · view only · purged after 24h</span>
     <span>Report</span>
   </footer>
 </body>

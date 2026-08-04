@@ -7,7 +7,7 @@ import type {
   ShotSummary,
   QuotaStatus,
 } from "@hauntshot/shared";
-import { DEFAULT_HOTKEY, FREE_LIVE_LIMIT } from "@hauntshot/shared";
+import { DEFAULT_HOTKEY, FREE_DAILY_LIMIT } from "@hauntshot/shared";
 import Settings from "./Settings";
 import { CaptureIcon, GearIcon } from "./icons";
 import "./App.css";
@@ -196,6 +196,16 @@ export default function App() {
         setStatus("Capture cancelled");
       } else if (msg === "busy") {
         setStatus("Capture already in progress");
+      } else if (
+        msg.toLowerCase().includes("screen") &&
+        (msg.toLowerCase().includes("record") ||
+          msg.toLowerCase().includes("capture") ||
+          msg.toLowerCase().includes("permission") ||
+          msg.toLowerCase().includes("denied"))
+      ) {
+        setError(
+          "Screen Recording is off for HauntShot. System Settings → Privacy & Security → Screen Recording — enable HauntShot, then try again.",
+        );
       } else {
         setError(msg);
       }
@@ -216,9 +226,9 @@ export default function App() {
   }
 
   const liveLabel =
-    quota?.liveLimit == null
-      ? `Paid · ${quota?.liveCount ?? 0} live`
-      : `Free · ${quota?.liveCount ?? 0}/${FREE_LIVE_LIMIT} live`;
+    quota?.dailyLimit == null
+      ? `Paid · ${quota?.usedToday ?? 0} today`
+      : `Free · ${quota?.usedToday ?? 0}/${FREE_DAILY_LIMIT} today`;
 
   return (
     <main className="shell">

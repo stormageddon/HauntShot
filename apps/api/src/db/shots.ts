@@ -1,5 +1,5 @@
 import type { QuotaStatus, ShotSummary } from "@hauntshot/shared";
-import { FREE_LIVE_LIMIT } from "@hauntshot/shared";
+import { FREE_DAILY_LIMIT } from "@hauntshot/shared";
 
 export interface ShotRow {
   id: string;
@@ -44,6 +44,7 @@ export async function ensureDevice(db: D1Database, deviceId: string): Promise<vo
     .run();
 }
 
+/** Live (unexpired) shots — still used for the panel list, not for free quota. */
 export async function countLiveShots(
   db: D1Database,
   deviceId: string,
@@ -54,6 +55,22 @@ export async function countLiveShots(
        WHERE device_id = ?
          AND deleted_at IS NULL
          AND expires_at > datetime('now')`,
+    )
+    .bind(deviceId)
+    .first<{ c: number }>();
+  return row?.c ?? 0;
+}
+
+/** Captures started today in UTC — the free-tier meter. */
+export async function countCapturesToday(
+  db: D1Database,
+  deviceId: string,
+): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM shots
+       WHERE device_id = ?
+         AND created_at >= datetime('now', 'start of day')`,
     )
     .bind(deviceId)
     .first<{ c: number }>();
@@ -76,11 +93,11 @@ export async function quotaForDevice(
   deviceId: string,
 ): Promise<QuotaStatus> {
   const tier = await getDeviceTier(db, deviceId);
-  const liveCount = await countLiveShots(db, deviceId);
+  const usedToday = await countCapturesToday(db, deviceId);
   return {
     tier,
-    liveCount,
-    liveLimit: tier === "paid" ? null : FREE_LIVE_LIMIT,
+    usedToday,
+    dailyLimit: tier === "paid" ? null : FREE_DAILY_LIMIT,
   };
 }
 
@@ -139,4 +156,25 @@ export async function getLiveShot(
       .bind(id)
       .first<ShotRow>()) ?? null
   );
+}
+
+export async function listExpiredShots(
+  db: D1Database,
+  limit: number,
+): Promise<ShotRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT * FROM shots
+       WHERE deleted_at IS NULL
+         AND expires_at <= datetime('now')
+       ORDER BY expires_at ASC
+       LIMIT ?`,
+    )
+    .bind(limit)
+    .all<ShotRow>();
+  return results ?? [];
+}
+
+export async function deleteShotRow(db: D1Database, id: string): Promise<void> {
+  await db.prepare(`DELETE FROM shots WHERE id = ?`).bind(id).run();
 }
