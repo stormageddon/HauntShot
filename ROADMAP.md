@@ -25,6 +25,13 @@ inserts, so two captures fired at once while sitting at nine live can both read
 nine and both succeed. Rare when captures come one hotkey at a time, but it's a
 real hole — close it with a conditional insert or a transaction.
 
+**Lower free tier to 5/day.** Today free means **10 concurrent live** shots
+(`FREE_LIVE_LIMIT`), with a slot freeing when a shot expires. Product wants
+**5 per day** instead — that's a different meter (created-in-window, not
+currently-live). Needs a new counter or daily bucket in D1, copy updates in the
+panel quota badge and settings upgrade blurb, and a clear rule for what happens
+at midnight UTC vs local time.
+
 ## Lifecycle
 
 **Expired shots are never actually deleted.** Rows simply stop matching
@@ -44,9 +51,26 @@ disappearing without a clipboard write. Owning the region select instead (a
 transparent fullscreen window, drag to crop a frame grabbed in-process) would
 make capture behave the same everywhere and remove the clipboard round-trip.
 
+**Print Screen should start a capture on Windows.** Muscle memory on that
+platform is the PrtSc key, not Control+Shift+5. Register it (or offer it as the
+Windows default) alongside the existing hotkey, and decide whether it replaces
+the OS clipboard screenshot or runs in addition to it.
+
 **The Windows tray icon is the stock Tauri logo.** The `HS` capture-frame glyph
 is a macOS alpha template, so the tray falls back to the default window icon
 elsewhere. Windows needs a full-color variant.
+
+**The Windows build / installer icon is wrong too.** Beyond the tray, the `.exe`
+/ MSI / Start-menu identity still ships the stock Tauri assets. Swap
+`icons/icon.ico` (and the Square* store logos if we keep them) for HauntShot
+branding so installed builds don't look like a template app.
+
+## Desktop shell
+
+**Launch at login.** A menubar/tray app people have to open by hand after every
+reboot will feel broken. Add a "Start HauntShot at login" setting (macOS Login
+Items / Windows Startup folder or Task Scheduler via Tauri's autostart plugin)
+and default it on for fresh installs.
 
 ## Shipping and updates
 
