@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type {
   ListShotsResponse,
   ShotSummary,
@@ -229,6 +230,16 @@ export default function App() {
     }
   }
 
+  async function openShot(shot: ShotSummary) {
+    const url = shot.viewerUrl ?? `${apiBase}${shot.viewerPath}`;
+    try {
+      await openUrl(url);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   const liveLabel =
     quota?.dailyLimit == null
       ? `Paid · ${quota?.usedToday ?? 0} today`
@@ -258,15 +269,22 @@ export default function App() {
           ) : (
             shots.map((shot) => (
               <div className="row" key={shot.id}>
-                {thumbs[shot.id] ? (
-                  <img className="thumb" src={thumbs[shot.id]} alt="" />
-                ) : (
-                  <div className="thumb empty-thumb" aria-hidden="true" />
-                )}
-                <div className="meta">
-                  <div className="ttl">{remainingLabel(shot.expiresAt)}</div>
-                  <div className="url">{shot.viewerPath}</div>
-                </div>
+                <button
+                  type="button"
+                  className="shot-open"
+                  aria-label={`Open screenshot ${shot.viewerPath}`}
+                  onClick={() => void openShot(shot)}
+                >
+                  {thumbs[shot.id] ? (
+                    <img className="thumb" src={thumbs[shot.id]} alt="" />
+                  ) : (
+                    <div className="thumb empty-thumb" aria-hidden="true" />
+                  )}
+                  <div className="meta">
+                    <div className="ttl">{remainingLabel(shot.expiresAt)}</div>
+                    <div className="url">{shot.viewerPath}</div>
+                  </div>
+                </button>
                 <button type="button" onClick={() => void copyLink(shot)}>
                   Copy link
                 </button>

@@ -132,6 +132,35 @@ body,
   border-bottom: 1px solid var(--hs-line-soft);
 }
 
+.shot-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.shot-open:hover {
+  background: transparent;
+}
+
+.shot-open:hover .ttl {
+  color: var(--hs-accent);
+}
+
+.shot-open:focus-visible {
+  outline: 1px solid var(--hs-focus);
+  outline-offset: 2px;
+}
+
 .thumb {
   flex: none;
   width: 46px;
