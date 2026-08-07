@@ -12,7 +12,7 @@ Modern successor to the original Mac [PicShare](https://github.com/stormageddon/
 | API / viewer | Cloudflare Workers + Hono |
 | Images | R2 (`StoragePort` — S3-compatible) |
 | Metadata / quota | D1 (portable SQL → Postgres later) |
-| Payments | Stripe (not wired yet) |
+| Payments | Stripe Checkout + Customer Portal + webhooks |
 
 ## Monorepo
 
@@ -24,7 +24,8 @@ packages/shared   Shared types + constants (limits, hotkey, TTL)
 
 ## Product rules (MVP)
 
-- Free: **5 captures per UTC day**; paid unlimited — **$4.99/mo** or **$29.99/yr** (Stripe TBD)
+- Free: **5 captures per UTC day**; paid unlimited — **$4.99/mo** or **$29.99/yr**
+  (Upgrade from Settings → Stripe Checkout)
 - Links expire and are **purged** after **24h TTL**
 - View-only (no download)
 - Hotkey default: **Control+Shift+5** (Windows also **Print Screen**)
@@ -38,7 +39,8 @@ Menubar/tray app — no Dock or taskbar icon.
 - Right-click opens the menu: Capture, Open HauntShot, Quit
 - The panel hides on `Esc` or when it loses focus
 - List rows show a thumbnail built from the capture itself and cached under the app
-  data dir, so previews never re-download full screenshots
+  data dir, so previews never re-download full screenshots. Click the thumbnail or
+  row to open the viewer; **Copy link** only puts the URL on the clipboard.
 - A capture shows its own HUD under the tray icon rather than a system notification:
   in dev those are posted under Terminal's bundle id, and in release they're one
   System Settings toggle away from silence
@@ -97,14 +99,30 @@ npx wrangler login
 npx wrangler d1 create hauntshot          # put the real database_id in wrangler.jsonc
 npx wrangler r2 bucket create hauntshot-shots
 npx wrangler d1 migrations apply hauntshot --remote
+# Billing secrets (after Stripe products/prices exist — see apps/api/scripts/setup-stripe.mjs)
+#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_YEARLY
 npm run deploy -w api
 ```
+
+Webhook URL: `https://app.hauntshot.com/webhooks/stripe`  
+Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.
 
 Viewer links are built from the request origin, so a deployed Worker hands out
 its own URLs with no extra config.
 
 ## Status
 
-Working: menubar tray + panel; region capture → upload → clipboard → toast; history with previews; viewer + OG; **5 captures/day** free quota; hourly expiry purge; product/privacy/terms pages; launch-at-login; Windows Print Screen + branded icons; API at `https://app.hauntshot.com` (also `workers.dev`).
+Working: menubar tray + panel; region capture → upload → clipboard → toast; history
+with previews (click opens viewer); viewer + OG; **5 captures/day** free quota;
+hourly expiry purge; product/privacy/terms; launch-at-login; Windows Print Screen +
+branded icons; Stripe Upgrade + Customer Portal; API at `https://hauntshot.com`
+(also `app` / `api` / `share` / `workers.dev`).
 
-Next: see [ROADMAP.md](ROADMAP.md) — Critical Path remaining: apex domain, code signing, Stripe/accounts, updater.
+**Next (Critical Path — see [ROADMAP.md](ROADMAP.md)):**
+
+1. **Code signing** — Apple notarization + Windows Authenticode
+2. **App updater** — Tauri updater (or version check) with signed artifacts
+3. **Hide panel before Capture** — so in-app Capture doesn’t cover the screen
+4. **Capture shutter sound** — short click on capture
+
+V2 highlights: full-screen hotkey, remappable hotkeys, custom region UI.

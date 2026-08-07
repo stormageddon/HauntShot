@@ -15,10 +15,9 @@
     "ENVIRONMENT": "production"
   },
   "workers_dev": true,
-  // Apex/www still have parking DNS from zone setup — Worker custom domains
-  // cannot attach until those A/CNAME records are deleted in the dashboard.
-  // share/api/app were attached via the Workers Domains API.
   "routes": [
+    { "pattern": "hauntshot.com", "custom_domain": true },
+    { "pattern": "www.hauntshot.com", "custom_domain": true },
     { "pattern": "share.hauntshot.com", "custom_domain": true },
     { "pattern": "api.hauntshot.com", "custom_domain": true },
     { "pattern": "app.hauntshot.com", "custom_domain": true }

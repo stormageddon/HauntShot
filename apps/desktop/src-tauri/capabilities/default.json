@@ -16,6 +16,8 @@
       "allow": [
         { "url": "http://localhost:8787/**" },
         { "url": "http://127.0.0.1:8787/**" },
+        { "url": "https://hauntshot.com/**" },
+        { "url": "https://www.hauntshot.com/**" },
         { "url": "https://*.hauntshot.app/**" },
         { "url": "https://*.hauntshot.com/**" },
         { "url": "https://hauntshot-api.hauntshot.workers.dev/**" }

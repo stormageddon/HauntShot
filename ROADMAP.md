@@ -14,10 +14,10 @@ V2 is everything else that can wait without breaking the product promise.
 
 ### Distribution and trust
 
-**Finish hauntshot.com apex on the Worker.** `app` / `api` / `share` subdomains
-are attached. Apex and `www` still have parking A/CNAME records from zone setup —
-delete those in the Cloudflare DNS dashboard, then add custom domains for
-`hauntshot.com` + `www` and rebuild clients against `https://hauntshot.com`.
+~~**Finish hauntshot.com apex on the Worker.**~~ Done — parking A/CNAME removed;
+`hauntshot.com` + `www` attached as Worker custom domains. Clients should use
+`https://hauntshot.com` (`HAUNTSHOT_API_BASE`). Subdomains `app` / `api` /
+`share` remain as aliases.
 
 **Product page with downloads.** Landing, privacy, and terms ship from the
 Worker (`/`, `/privacy`, `/terms`). Download buttons still deep-link to GitHub
