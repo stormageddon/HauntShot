@@ -15,4 +15,14 @@ describe("hauntshot api", () => {
     const res = await app.request("http://localhost/v1/shots");
     expect(res.status).toBe(401);
   });
+
+  it("redirects product downloads", async () => {
+    const app = createApp();
+    const mac = await app.request("http://localhost/download/mac", {
+      redirect: "manual",
+    });
+    expect(mac.status).toBe(302);
+    const loc = mac.headers.get("Location") ?? "";
+    expect(loc).toMatch(/github\.com\/stormageddon\/HauntShot/);
+  });
 });

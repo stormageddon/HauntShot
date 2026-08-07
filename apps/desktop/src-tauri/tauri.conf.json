@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "HauntShot",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "identifier": "app.hauntshot.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -54,5 +54,16 @@
       "infoPlist": "Info.plist.overlay"
     }
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDREQkVBOUM0NjFGQTc0QTUKUldTbGRQcGh4S20rVGVrZ0VVSE05TEw0UFRIR1ZxUUVvUjlOeWpzYlgyR21kbDE2bGtwNmFvZGwK",
+      "endpoints": [
+        "https://hauntshot.com/updates/latest.json",
+        "https://github.com/stormageddon/HauntShot/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
 }

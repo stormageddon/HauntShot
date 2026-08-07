@@ -19,17 +19,18 @@ V2 is everything else that can wait without breaking the product promise.
 `https://hauntshot.com` (`HAUNTSHOT_API_BASE`). Subdomains `app` / `api` /
 `share` remain as aliases.
 
-**Product page with downloads.** Landing, privacy, and terms ship from the
-Worker (`/`, `/privacy`, `/terms`). Download buttons still deep-link to GitHub
-Actions artifacts until signed release binaries are hosted.
+~~**Product page with downloads.**~~ Done — `/download/mac` and `/download/windows`
+redirect to the latest GitHub Release assets; landing CTAs use those URLs.
 
-**Code signing.** Unsigned Windows MSIs are already being blocked as malware;
-unsigned Mac builds trip Gatekeeper. V1 needs Authenticode (Windows) and
-Developer ID + notarization (macOS). Self-signed does not count.
+~~**App update path (minimum viable).**~~ Done — Tauri updater plugin; Settings →
+Check; quiet notice when an update exists; manifest at
+`https://hauntshot.com/updates/latest.json` (proxied from Releases). Updater
+artifacts are produced by the Release workflow (minisign key already in CI).
 
-**App update path (minimum viable).** A tray app that cannot be updated or
-recalled is a liability the day after launch. Ship Tauri updater (or at least a
-version check that points at the download page) with signed artifacts.
+**Code signing.** Pipeline is wired (Release workflow + `docs/RELEASE.md`). Still
+needs Apple Developer ID + notarization secrets and a Windows Authenticode
+certificate in GitHub Secrets before installers are trusted by Gatekeeper /
+SmartScreen. Unsigned builds remain CI smoke only.
 
 ### The ephemeral promise
 
@@ -67,9 +68,10 @@ tray panel and waits a beat before the OS region UI appears.
 
 Menubar/tray panel · region capture → upload → clipboard → HUD · history with
 thumbnails (click opens viewer) · viewer + OG · free quota (5/day) · hourly
-purge · CI installers · API on Workers/D1/R2 · branded `hauntshot.com` · Stripe
-Checkout + portal · shutter sound · hide panel before capture · launch at
-login · Print Screen · permission guidance.
+purge · CI installers · Release + updater pipeline · branded downloads · API on
+Workers/D1/R2 · branded `hauntshot.com` · Stripe Checkout + portal · shutter
+sound · hide panel before capture · launch at login · Print Screen · permission
+guidance.
 
 ---
 
@@ -133,8 +135,8 @@ than “someday.” Print Screen, Windows icons, 5/day quota, autostart, Stripe,
 apex domain, shutter sound, and hide-before-capture are done under Critical
 Path.
 
-**Still Critical Path:** signed installers, hosted downloads (vs Actions
-artifacts), and an app update path.
+**Still Critical Path:** Apple + Windows **code signing certificates** in CI
+secrets (pipeline and updater are otherwise ready). See `docs/RELEASE.md`.
 
 Intentionally still V2: custom capture UI, full-screen hotkey, remappable
 hotkeys, theme toggle, atomic quota, attestation theater, Linux, store

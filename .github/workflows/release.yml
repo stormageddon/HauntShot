@@ -1,0 +1,124 @@
+name: Release
+
+# Signed installers + Tauri updater artifacts → GitHub Release.
+# Trigger: push tag v* (e.g. v1.0.0) or manual dispatch.
+#
+# Required secret (already set for updater signatures):
+#   TAURI_SIGNING_PRIVATE_KEY
+#
+# Optional but required for Gatekeeper / SmartScreen trust:
+#   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+#   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
+#   WINDOWS_CERTIFICATE, WINDOWS_CERTIFICATE_PASSWORD
+#
+# See docs/RELEASE.md
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "API the build should talk to"
+        required: false
+        default: "https://hauntshot.com"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - platform: windows-latest
+            args: ""
+            rust_targets: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    env:
+      API_BASE: ${{ inputs.api_base || vars.HAUNTSHOT_API_BASE || 'https://hauntshot.com' }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+          prefix-key: hauntshot-release-v1
+
+      - run: npm ci
+
+      - name: Import Windows certificate
+        if: runner.os == 'Windows' && env.WINDOWS_CERTIFICATE != ''
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP/hauntshot.pfx", $bytes)
+          $secure = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText
+          $cert = Import-PfxCertificate -FilePath "$env:RUNNER_TEMP/hauntshot.pfx" `
+            -CertStoreLocation Cert:\CurrentUser\My -Password $secure
+          $thumb = $cert.Thumbprint
+          $merge = @{
+            bundle = @{
+              windows = @{
+                certificateThumbprint = $thumb
+                digestAlgorithm = "sha256"
+                timestampUrl = "http://timestamp.digicert.com"
+              }
+            }
+          } | ConvertTo-Json -Depth 6
+          Set-Content -Path apps/desktop/src-tauri/tauri.windows-sign.conf.json -Value $merge
+          "WINDOWS_SIGN_CONFIG=--config tauri.windows-sign.conf.json" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Refuse localhost API base
+        shell: bash
+        run: |
+          if [[ -z "$API_BASE" || "$API_BASE" == *127.0.0.1* ]]; then
+            echo "Refusing to ship a build aimed at '$API_BASE'" >&2
+            exit 1
+          fi
+
+      - name: Build and upload release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_API_BASE: ${{ env.API_BASE }}
+          HAUNTSHOT_API_BASE: ${{ env.API_BASE }}
+        with:
+          projectPath: apps/desktop
+          tagName: v__VERSION__
+          releaseName: HauntShot v__VERSION__
+          releaseBody: |
+            HauntShot desktop installers for this version.
+
+            Download from https://hauntshot.com (Mac / Windows buttons) or the assets below.
+          releaseDraft: false
+          prerelease: false
+          updaterJsonPreferNsis: true
+          args: ${{ matrix.args }} --config tauri.release.conf.json ${{ env.WINDOWS_SIGN_CONFIG }}

@@ -98,6 +98,25 @@ export default function App() {
       .catch((e) => setError(String(e)));
   }, []);
 
+  // Quiet update check once per session; Settings has the install button.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const update = await check();
+        if (!cancelled && update) {
+          setStatus(`Update ${update.version} available — Settings → Check`);
+        }
+      } catch {
+        // Offline or no release yet — ignore.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // The panel is only ever visible while focused, so focus tracks visibility.
   useEffect(() => {
     const unlisten = getCurrentWindow().onFocusChanged(({ payload }) =>

@@ -15,6 +15,12 @@ import {
 } from "./db/shots";
 import { landingHtml, privacyHtml, termsHtml } from "./pages";
 import {
+  DOWNLOAD_FALLBACK,
+  fetchUpdaterManifest,
+  macDownloadUrl,
+  windowsDownloadUrl,
+} from "./downloads";
+import {
   billingCancelHtml,
   billingSuccessHtml,
   billingUpgradeHtml,
@@ -70,19 +76,29 @@ export function createApp() {
   app.get("/", (c) => c.html(landingHtml(new URL(c.req.url).origin)));
   app.get("/privacy", (c) => c.html(privacyHtml()));
   app.get("/terms", (c) => c.html(termsHtml()));
-  // Installers still come from GitHub Actions until we host binaries ourselves.
-  app.get("/download/mac", (c) =>
-    c.redirect(
-      "https://github.com/stormageddon/HauntShot/actions/workflows/macos-build.yml",
-      302,
-    ),
-  );
-  app.get("/download/windows", (c) =>
-    c.redirect(
-      "https://github.com/stormageddon/HauntShot/actions/workflows/windows-build.yml",
-      302,
-    ),
-  );
+  app.get("/download/mac", async (c) => {
+    const url = (await macDownloadUrl()) ?? DOWNLOAD_FALLBACK.mac;
+    return c.redirect(url, 302);
+  });
+  app.get("/download/windows", async (c) => {
+    const url = (await windowsDownloadUrl()) ?? DOWNLOAD_FALLBACK.windows;
+    return c.redirect(url, 302);
+  });
+
+  // Tauri updater static JSON (uploaded to each GitHub Release by CI).
+  app.get("/updates/latest.json", async (c) => {
+    const upstream = await fetchUpdaterManifest();
+    if (!upstream.ok) {
+      return c.json({ error: "No updater manifest published yet" }, 404);
+    }
+    return new Response(upstream.body, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300",
+      },
+    });
+  });
 
   app.get("/billing/success", (c) => c.html(billingSuccessHtml()));
   app.get("/billing/cancel", (c) => c.html(billingCancelHtml()));
