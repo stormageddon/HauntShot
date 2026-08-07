@@ -66,8 +66,10 @@ tray panel and waits a beat before the OS region UI appears.
 ### Already done (do not re-litigate)
 
 Menubar/tray panel · region capture → upload → clipboard → HUD · history with
-thumbnails · viewer + OG · free quota enforcement (old model) · CI installers ·
-API on Workers/D1/R2 · API URL bake-in for release builds.
+thumbnails (click opens viewer) · viewer + OG · free quota (5/day) · hourly
+purge · CI installers · API on Workers/D1/R2 · branded `hauntshot.com` · Stripe
+Checkout + portal · shutter sound · hide panel before capture · launch at
+login · Print Screen · permission guidance.
 
 ---
 
@@ -127,8 +129,12 @@ gets you launchable; reputation polish continues after.
 
 Previously missing for a real V1: code signing / notarization, first-run
 permission UX, privacy/terms, and treating updates as launch-critical rather
-than “someday.” Print Screen, Windows icons, 5/day quota, and autostart were
-already noted and are now under Critical Path.
+than “someday.” Print Screen, Windows icons, 5/day quota, autostart, Stripe,
+apex domain, shutter sound, and hide-before-capture are done under Critical
+Path.
+
+**Still Critical Path:** signed installers, hosted downloads (vs Actions
+artifacts), and an app update path.
 
 Intentionally still V2: custom capture UI, full-screen hotkey, remappable
 hotkeys, theme toggle, atomic quota, attestation theater, Linux, store
