@@ -218,10 +218,10 @@ export function createApp() {
     if (!shot) {
       return c.html(
         `<!doctype html><html><head><meta charset="utf-8"><title>HauntShot</title></head>
-         <body style="font-family:system-ui;max-width:32rem;margin:4rem auto;padding:0 1rem">
+         <body style="font-family:system-ui;max-width:32rem;margin:4rem auto;padding:0 1rem;background:#0a0212;color:#f0e8fa">
            <h1>This screenshot is gone</h1>
            <p>It expired or the link is invalid. Temporary links are deleted automatically after 24 hours.</p>
-         <p style="margin-top:1.5rem"><a href="/" style="color:#c9b8a0">HauntShot</a> · <a href="/privacy" style="color:#c9b8a0">Privacy</a></p>
+         <p style="margin-top:1.5rem"><a href="/" style="color:#c9a8ff">HauntShot</a> · <a href="/privacy" style="color:#c9a8ff">Privacy</a></p>
          </body></html>`,
         404,
       );
@@ -246,10 +246,10 @@ export function createApp() {
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <style>
-    body { margin:0; font-family:system-ui,sans-serif; background:#111; color:#eee; }
+    body { margin:0; font-family:system-ui,sans-serif; background:#0a0212; color:#f0e8fa; }
     header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; }
     img { display:block; max-width:100%; max-height:calc(100vh - 88px); margin:0 auto; }
-    footer { padding:12px 16px; font-size:12px; color:#888; display:flex; justify-content:space-between; }
+    footer { padding:12px 16px; font-size:12px; color:#a898bf; display:flex; justify-content:space-between; }
   </style>
 </head>
 <body>
@@ -259,7 +259,7 @@ export function createApp() {
   </header>
   <main><img src="${imageUrl}" alt="Temporary screenshot" /></main>
   <footer>
-    <span><a href="/privacy" style="color:#888">Privacy</a> · view only · purged after 24h</span>
+    <span><a href="/privacy" style="color:#a898bf">Privacy</a> · view only · purged after 24h</span>
     <span>Report</span>
   </footer>
 </body>

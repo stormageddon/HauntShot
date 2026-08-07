@@ -256,8 +256,8 @@ async function applyStripeEvent(
 export function billingSuccessHtml(): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><title>HauntShot Pro</title>
-<style>body{font-family:system-ui;background:#111;color:#eee;max-width:28rem;margin:4rem auto;padding:0 1rem;text-align:center}
-a{color:#e8a45c}</style></head>
+<style>body{font-family:system-ui;background:#0a0212;color:#f0e8fa;max-width:28rem;margin:4rem auto;padding:0 1rem;text-align:center}
+a{color:#c9a8ff}</style></head>
 <body>
   <h1>You're on HauntShot Pro</h1>
   <p>Unlimited captures are active on this account. Open the HauntShot tray app — the quota badge should read Paid.</p>
@@ -268,8 +268,8 @@ a{color:#e8a45c}</style></head>
 export function billingCancelHtml(): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><title>Checkout cancelled</title>
-<style>body{font-family:system-ui;background:#111;color:#eee;max-width:28rem;margin:4rem auto;padding:0 1rem;text-align:center}
-a{color:#e8a45c}</style></head>
+<style>body{font-family:system-ui;background:#0a0212;color:#f0e8fa;max-width:28rem;margin:4rem auto;padding:0 1rem;text-align:center}
+a{color:#c9a8ff}</style></head>
 <body>
   <h1>Checkout cancelled</h1>
   <p>No charge was made. You can upgrade anytime from the HauntShot settings gear.</p>
@@ -289,11 +289,11 @@ export function billingUpgradeHtml(origin: string): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
-    :root { --bg:#0c0b0a; --ink:#f2ebe3; --muted:#a89f94; --accent:#e8a45c; --line:#2a2420; --card:#161311; }
+    :root { --bg:#0a0212; --ink:#f0e8fa; --muted:#a898bf; --accent:#c9a8ff; --line:#2a1a3d; --card:#1a0f28; }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh; font-family: "DM Sans", system-ui, sans-serif;
-      color: var(--ink); background: radial-gradient(900px 500px at 20% -10%, #2a1c12, transparent 55%), var(--bg);
+      color: var(--ink); background: radial-gradient(900px 500px at 20% -10%, #2a1540, transparent 55%), var(--bg);
       display: flex; align-items: center; justify-content: center; padding: 2rem 1rem;
     }
     .box { width: min(28rem, 100%); }

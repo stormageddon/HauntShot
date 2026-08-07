@@ -18,12 +18,12 @@ export function landingHtml(origin: string): string {
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg0: #0c0b0a;
-      --bg1: #161311;
-      --ink: #f2ebe3;
-      --muted: #a89f94;
-      --accent: #e8a45c;
-      --line: #2a2420;
+      --bg0: #0a0212;
+      --bg1: #1a0f28;
+      --ink: #f0e8fa;
+      --muted: #a898bf;
+      --accent: #c9a8ff;
+      --line: #2a1a3d;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -31,8 +31,8 @@ export function landingHtml(origin: string): string {
       font-family: "DM Sans", system-ui, sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(1200px 600px at 10% -10%, #2a1c12 0%, transparent 55%),
-        radial-gradient(900px 500px at 100% 0%, #1a2228 0%, transparent 50%),
+        radial-gradient(1200px 600px at 10% -10%, #2a1540 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #1a0f28 0%, transparent 50%),
         linear-gradient(180deg, var(--bg1), var(--bg0));
       line-height: 1.5;
     }
@@ -76,7 +76,7 @@ export function landingHtml(origin: string): string {
       transition: transform 0.15s ease, background 0.15s ease;
     }
     a.btn:hover { transform: translateY(-1px); }
-    a.btn.primary { background: var(--accent); color: #1a120a; }
+    a.btn.primary { background: var(--accent); color: #0a0212; }
     a.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
     .grid {
       display: grid; gap: 1.25rem;
@@ -176,12 +176,12 @@ function legalPage(title: string, body: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title} · HauntShot</title>
   <style>
-    body { margin:0; font-family: system-ui, sans-serif; background:#111; color:#eee;
+    body { margin:0; font-family: system-ui, sans-serif; background:#0a0212; color:#f0e8fa;
       line-height:1.55; }
     main { max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-    a { color:#c9b8a0; }
+    a { color:#c9a8ff; }
     h1 { font-size: 1.6rem; }
-    ul { padding-left: 1.2rem; color:#bbb; }
+    ul { padding-left: 1.2rem; color:#a898bf; }
     li { margin: 0.5rem 0; }
   </style>
 </head>

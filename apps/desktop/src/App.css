@@ -1,7 +1,19 @@
 :root {
+  /* Primary #0a0212 · secondary #1a0f28 · tertiary #c9a8ff */
+  --hs-bg: #0a0212;
+  --hs-surface: #1a0f28;
+  --hs-surface-hover: #241538;
+  --hs-accent: #c9a8ff;
+  --hs-ink: #f0e8fa;
+  --hs-muted: #a898bf;
+  --hs-line: #2a1a3d;
+  --hs-line-soft: #1f1230;
+  --hs-error: #ff9aaa;
+  --hs-focus: #c9a8ff;
+
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: #e8e8e8;
-  background: #161616;
+  color: var(--hs-ink);
+  background: var(--hs-bg);
   line-height: 1.4;
 }
 
@@ -20,7 +32,8 @@ body,
   box-sizing: border-box;
   gap: 10px;
   /* Undecorated tray panel — draw its own edge. */
-  border: 1px solid #2f2f2f;
+  border: 1px solid var(--hs-line);
+  background: var(--hs-bg);
 }
 
 .header {
@@ -35,14 +48,14 @@ body,
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: #9a9a9a;
+  color: var(--hs-muted);
   background: transparent;
   border: none;
   border-radius: 4px;
 }
 
 .icon-button:hover {
-  color: #fff;
+  color: var(--hs-ink);
   background: transparent;
 }
 
@@ -51,7 +64,7 @@ body,
 }
 
 .icon-button:focus-visible {
-  outline: 1px solid #4c8dd8;
+  outline: 1px solid var(--hs-focus);
   outline-offset: 3px;
 }
 
@@ -61,14 +74,14 @@ body,
 }
 
 .icon-button[aria-pressed="true"] {
-  color: #9ecbff;
+  color: var(--hs-accent);
 }
 
 .soon {
   font-size: 10px;
   font-weight: 500;
-  color: #8a8a8a;
-  border: 1px solid #333;
+  color: var(--hs-muted);
+  border: 1px solid var(--hs-line);
   border-radius: 999px;
   padding: 1px 6px;
   margin-left: 4px;
@@ -77,8 +90,8 @@ body,
 
 .quota {
   font-size: 12px;
-  color: #b0b0b0;
-  border: 1px solid #333;
+  color: var(--hs-muted);
+  border: 1px solid var(--hs-line);
   border-radius: 999px;
   padding: 2px 8px;
 }
@@ -93,22 +106,22 @@ body,
 
 .hint,
 .empty {
-  color: #8a8a8a;
+  color: var(--hs-muted);
 }
 
 .status {
-  color: #9ecbff;
+  color: var(--hs-accent);
 }
 
 .error {
-  color: #ff8f8f;
+  color: var(--hs-error);
 }
 
 .list {
   flex: 1;
   overflow: auto;
-  border-top: 1px solid #2a2a2a;
-  border-bottom: 1px solid #2a2a2a;
+  border-top: 1px solid var(--hs-line-soft);
+  border-bottom: 1px solid var(--hs-line-soft);
 }
 
 .row {
@@ -116,7 +129,7 @@ body,
   gap: 10px;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid #242424;
+  border-bottom: 1px solid var(--hs-line-soft);
 }
 
 .thumb {
@@ -124,8 +137,8 @@ body,
   width: 46px;
   height: 46px;
   border-radius: 4px;
-  border: 1px solid #2f2f2f;
-  background: #1c1c1c;
+  border: 1px solid var(--hs-line);
+  background: var(--hs-surface);
   object-fit: cover;
 }
 
@@ -133,10 +146,10 @@ body,
 .empty-thumb {
   background: repeating-linear-gradient(
     -45deg,
-    #1c1c1c,
-    #1c1c1c 4px,
-    #222 4px,
-    #222 8px
+    var(--hs-surface),
+    var(--hs-surface) 4px,
+    #140a20 4px,
+    #140a20 8px
   );
 }
 
@@ -152,16 +165,16 @@ body,
 
 .url {
   font-size: 11px;
-  color: #8a8a8a;
+  color: var(--hs-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 button {
-  border: 1px solid #3a3a3a;
-  background: #222;
-  color: #eee;
+  border: 1px solid var(--hs-line);
+  background: var(--hs-surface);
+  color: var(--hs-ink);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 12px;
@@ -169,7 +182,7 @@ button {
 }
 
 button:hover {
-  background: #2c2c2c;
+  background: var(--hs-surface-hover);
 }
 
 /* Equal outer columns so capture is centred on the panel, not on what's left
@@ -188,14 +201,14 @@ button:hover {
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: #d8d8d8;
+  color: var(--hs-ink);
   background: transparent;
   border: none;
   border-radius: 4px;
 }
 
 .capture-button:hover {
-  color: #fff;
+  color: var(--hs-accent);
   background: transparent;
 }
 
@@ -204,7 +217,7 @@ button:hover {
 }
 
 .capture-button:focus-visible {
-  outline: 1px solid #4c8dd8;
+  outline: 1px solid var(--hs-focus);
   outline-offset: 3px;
 }
 

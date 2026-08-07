@@ -1,7 +1,14 @@
 :root {
+  --hs-bg: #0a0212;
+  --hs-accent: #c9a8ff;
+  --hs-ink: #f0e8fa;
+  --hs-muted: #a898bf;
+  --hs-line: #2a1a3d;
+  --hs-error: #ff9aaa;
+
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: #e8e8e8;
-  background: #161616;
+  color: var(--hs-ink);
+  background: var(--hs-bg);
   line-height: 1.35;
 }
 
@@ -21,12 +28,13 @@ body {
   padding: 10px 12px;
   gap: 2px;
   /* Undecorated HUD — draw its own edge, like the panel. */
-  border: 1px solid #2f2f2f;
-  border-left: 3px solid #4c8dd8;
+  border: 1px solid var(--hs-line);
+  border-left: 3px solid var(--hs-accent);
+  background: var(--hs-bg);
 }
 
 .toast.error {
-  border-left-color: #d85c5c;
+  border-left-color: var(--hs-error);
 }
 
 .title {
@@ -39,12 +47,12 @@ body {
 
 .detail {
   font-size: 11px;
-  color: #8a8a8a;
+  color: var(--hs-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .toast.error .title {
-  color: #ff8f8f;
+  color: var(--hs-error);
 }
