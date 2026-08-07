@@ -1,4 +1,5 @@
 mod capture;
+mod sound;
 mod thumbs;
 mod toast;
 mod tray;
@@ -136,13 +137,28 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         return Err("busy".into());
     };
 
+    // Hide the tray panel first so region select isn't covering the display.
+    if let Some(window) = app.get_webview_window(tray::PANEL_LABEL) {
+        if window.is_visible().unwrap_or(false) {
+            let _ = window.hide();
+            // Let the compositor clear the panel before the OS capture UI appears.
+            let _ = tauri::async_runtime::spawn_blocking(|| {
+                std::thread::sleep(std::time::Duration::from_millis(120));
+            })
+            .await;
+        }
+    }
+
     let _ = app.emit("share-status", "Select a region…");
 
     let png = match tauri::async_runtime::spawn_blocking(capture::capture_region_png)
         .await
         .map_err(|e| e.to_string())?
     {
-        Ok(CaptureOutcome::Captured(bytes)) => bytes,
+        Ok(CaptureOutcome::Captured(bytes)) => {
+            sound::play_shutter();
+            bytes
+        }
         Ok(CaptureOutcome::Cancelled) => {
             // Terminal, but not a failure — the panel needs it to stop waiting.
             let _ = app.emit("share-cancelled", ());

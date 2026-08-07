@@ -122,7 +122,5 @@ branded icons; Stripe Upgrade + Customer Portal; API at `https://hauntshot.com`
 
 1. **Code signing** — Apple notarization + Windows Authenticode
 2. **App updater** — Tauri updater (or version check) with signed artifacts
-3. **Hide panel before Capture** — so in-app Capture doesn’t cover the screen
-4. **Capture shutter sound** — short click on capture
 
 V2 highlights: full-screen hotkey, remappable hotkeys, custom region UI.

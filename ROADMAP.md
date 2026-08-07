@@ -57,12 +57,11 @@ device-id metered until a paid account is linked.
 ~~**First-run permission guidance.**~~ Done — panel error points at Screen
 Recording settings when capture is denied.
 
-**Capture shutter sound.** Play a short camera-shot click when a capture
-starts (or completes), so the hotkey/button action feels intentional.
+~~**Capture shutter sound.**~~ Done — short click plays when a region is captured
+(hotkey, tray menu, or panel Capture).
 
-**Hide panel before in-app capture.** Clicking Capture in the tray panel must
-close/hide the UI first so the region select isn’t covering the screen you’re
-trying to shoot. Hotkey-started captures already leave the panel parked.
+~~**Hide panel before in-app capture.**~~ Done — `run_capture_and_share` hides the
+tray panel and waits a beat before the OS region UI appears.
 
 ### Already done (do not re-litigate)
 
