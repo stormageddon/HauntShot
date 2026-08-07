@@ -39,11 +39,9 @@ version check that points at the download page) with signed artifacts.
 
 ### Paid tier that means something
 
-**Accounts + Stripe.** Device-id quota is bypassable by deleting a file, and
-nothing can write `devices.tier = paid`. V1 needs a person (email magic-link or
-OAuth is enough), Stripe Checkout + webhooks, and tier attached to the user —
-not the device — so two machines share one paid plan. Wire the existing Settings
-“Upgrade” stub to Checkout.
+~~**Accounts + Stripe.**~~ Done — Checkout + Customer Portal + webhooks; tier on
+user (devices inherit); Settings Upgrade opens Checkout. Free remains
+device-id metered until a paid account is linked.
 
 ~~**Privacy policy + terms.**~~ Done — `/privacy` and `/terms` on the Worker.
 
@@ -58,6 +56,13 @@ not the device — so two machines share one paid plan. Wire the existing Settin
 
 ~~**First-run permission guidance.**~~ Done — panel error points at Screen
 Recording settings when capture is denied.
+
+**Capture shutter sound.** Play a short camera-shot click when a capture
+starts (or completes), so the hotkey/button action feels intentional.
+
+**Hide panel before in-app capture.** Clicking Capture in the tray panel must
+close/hide the UI first so the region select isn’t covering the screen you’re
+trying to shoot. Hotkey-started captures already leave the panel parked.
 
 ### Already done (do not re-litigate)
 
@@ -74,6 +79,9 @@ API on Workers/D1/R2 · API URL bake-in for release builds.
 **Own the region-select UI.** Replace `screencapture` / `ms-screenclip` with an
 in-app overlay so branding, cancel, and behavior match on every OS. Also the
 path to Linux later.
+
+**Full-screen capture hotkey.** Separate binding from region select (e.g.
+Control+Shift+4 vs Control+Shift+5) that grabs the whole display in one shot.
 
 **Hotkey remapping.** Settings stub exists; ship after the defaults (including
 PrtSc) are right.
@@ -123,5 +131,6 @@ permission UX, privacy/terms, and treating updates as launch-critical rather
 than “someday.” Print Screen, Windows icons, 5/day quota, and autostart were
 already noted and are now under Critical Path.
 
-Intentionally still V2: custom capture UI, remappable hotkeys, theme toggle,
-atomic quota, attestation theater, Linux, store listings.
+Intentionally still V2: custom capture UI, full-screen hotkey, remappable
+hotkeys, theme toggle, atomic quota, attestation theater, Linux, store
+listings.

@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { DEFAULT_HOTKEY, FREE_DAILY_LIMIT } from "@hauntshot/shared";
 
-/** Settings that are live; placeholders stay marked Soon. */
-export default function Settings() {
+type Props = {
+  apiBase: string;
+  deviceId: string | null;
+  tier: "free" | "paid" | null;
+  onBillingChange?: () => void;
+};
+
+export default function Settings({
+  apiBase,
+  deviceId,
+  tier,
+  onBillingChange,
+}: Props) {
   const [launchAtLogin, setLaunchAtLogin] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [billingError, setBillingError] = useState("");
 
   useEffect(() => {
     void isEnabled()
@@ -22,6 +35,42 @@ export default function Settings() {
       setLaunchAtLogin(await isEnabled());
     } catch {
       // Leave the toggle alone if the OS refuses.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startUpgrade() {
+    if (!deviceId || busy) return;
+    setBusy(true);
+    setBillingError("");
+    try {
+      const url = `${apiBase}/billing/upgrade?device_id=${encodeURIComponent(deviceId)}`;
+      await openUrl(url);
+      onBillingChange?.();
+    } catch (e) {
+      setBillingError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openPortal() {
+    if (!deviceId || busy) return;
+    setBusy(true);
+    setBillingError("");
+    try {
+      const res = await fetch(`${apiBase}/v1/billing/portal`, {
+        method: "POST",
+        headers: { "X-HauntShot-Device-Id": deviceId },
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? `Portal failed (${res.status})`);
+      }
+      await openUrl(data.url);
+    } catch (e) {
+      setBillingError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -68,20 +117,39 @@ export default function Settings() {
         </button>
       </div>
 
-      <div className="row">
-        <div className="meta">
-          <div className="ttl">
-            HauntShot Pro <span className="soon">Soon</span>
+      {tier === "paid" ? (
+        <div className="row">
+          <div className="meta">
+            <div className="ttl">HauntShot Pro</div>
+            <div className="url">Unlimited captures · manage plan or cancel</div>
           </div>
-          <div className="url">
-            Unlimited captures · $4.99/mo or $29.99/yr · free is {FREE_DAILY_LIMIT}
-            /day
-          </div>
+          <button
+            type="button"
+            disabled={busy || !deviceId}
+            onClick={() => void openPortal()}
+          >
+            Manage
+          </button>
         </div>
-        <button type="button" disabled>
-          Upgrade
-        </button>
-      </div>
+      ) : (
+        <div className="row">
+          <div className="meta">
+            <div className="ttl">HauntShot Pro</div>
+            <div className="url">
+              Unlimited · $4.99/mo or $29.99/yr · free is {FREE_DAILY_LIMIT}/day
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={busy || !deviceId}
+            onClick={() => void startUpgrade()}
+          >
+            Upgrade
+          </button>
+        </div>
+      )}
+
+      {billingError ? <p className="error">{billingError}</p> : null}
     </section>
   );
 }

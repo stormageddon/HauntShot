@@ -1,5 +1,6 @@
 import type { QuotaStatus, ShotSummary } from "@hauntshot/shared";
 import { FREE_DAILY_LIMIT } from "@hauntshot/shared";
+import { resolveDeviceTier } from "./billing";
 
 export interface ShotRow {
   id: string;
@@ -81,11 +82,7 @@ export async function getDeviceTier(
   db: D1Database,
   deviceId: string,
 ): Promise<"free" | "paid"> {
-  const row = await db
-    .prepare(`SELECT tier FROM devices WHERE id = ?`)
-    .bind(deviceId)
-    .first<{ tier: string }>();
-  return row?.tier === "paid" ? "paid" : "free";
+  return resolveDeviceTier(db, deviceId);
 }
 
 export async function quotaForDevice(

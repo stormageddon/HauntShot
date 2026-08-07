@@ -12,7 +12,7 @@ import Settings from "./Settings";
 import { CaptureIcon, GearIcon } from "./icons";
 import "./App.css";
 
-const API_BASE =
+const FALLBACK_API_BASE =
   import.meta.env.VITE_API_BASE?.toString() || "http://127.0.0.1:8787";
 
 /** Short enough that a minute-resolution countdown never looks wrong. */
@@ -29,6 +29,7 @@ function remainingLabel(expiresAt: string): string {
 }
 
 export default function App() {
+  const [apiBase, setApiBase] = useState(FALLBACK_API_BASE);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [shots, setShots] = useState<ShotSummary[]>([]);
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
@@ -55,7 +56,7 @@ export default function App() {
   const api = useCallback(
     async (path: string, init?: RequestInit) => {
       if (!deviceId) throw new Error("No device id");
-      return fetch(`${API_BASE}${path}`, {
+      return fetch(`${apiBase}${path}`, {
         ...init,
         headers: {
           ...(init?.headers ?? {}),
@@ -63,7 +64,7 @@ export default function App() {
         },
       });
     },
-    [deviceId],
+    [apiBase, deviceId],
   );
 
   const refresh = useCallback(async () => {
@@ -88,6 +89,9 @@ export default function App() {
   }, [api, deviceId]);
 
   useEffect(() => {
+    invoke<string>("get_api_base")
+      .then(setApiBase)
+      .catch(() => setApiBase(FALLBACK_API_BASE));
     invoke<string>("get_device_id")
       .then(setDeviceId)
       .catch((e) => setError(String(e)));
@@ -215,7 +219,7 @@ export default function App() {
   }
 
   async function copyLink(shot: ShotSummary) {
-    const url = shot.viewerUrl ?? `${API_BASE}${shot.viewerPath}`;
+    const url = shot.viewerUrl ?? `${apiBase}${shot.viewerPath}`;
     try {
       await invoke("copy_link", { url });
       setError("");
@@ -237,17 +241,16 @@ export default function App() {
         {settingsOpen ? null : <span className="quota">{liveLabel}</span>}
       </header>
 
-      {settingsOpen ? (
-        <p className="hint">
-          Nothing here is wired up yet — these are placeholders.
-        </p>
-      ) : null}
-
       {settingsOpen ? null : error ? <p className="error">{error}</p> : null}
       {settingsOpen ? null : status ? <p className="status">{status}</p> : null}
 
       {settingsOpen ? (
-        <Settings />
+        <Settings
+          apiBase={apiBase}
+          deviceId={deviceId}
+          tier={quota?.tier ?? null}
+          onBillingChange={() => void refresh()}
+        />
       ) : (
         <section className="list">
           {shots.length === 0 ? (
@@ -290,7 +293,13 @@ export default function App() {
           className="icon-button"
           aria-label={settingsOpen ? "Back to captures" : "Settings"}
           aria-pressed={settingsOpen}
-          onClick={() => setSettingsOpen((open) => !open)}
+          onClick={() => {
+            setSettingsOpen((open) => {
+              const next = !open;
+              if (next) void refresh();
+              return next;
+            });
+          }}
         >
           <GearIcon />
         </button>

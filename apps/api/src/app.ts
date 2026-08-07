@@ -14,11 +14,24 @@ import {
   rowToSummary,
 } from "./db/shots";
 import { landingHtml, privacyHtml, termsHtml } from "./pages";
+import {
+  billingCancelHtml,
+  billingSuccessHtml,
+  billingUpgradeHtml,
+  handleStripeWebhook,
+  startCheckout,
+  startPortal,
+} from "./billing";
 
 export type Env = {
   DB: D1Database;
   BUCKET: R2Bucket;
   ENVIRONMENT?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_PRICE_MONTHLY?: string;
+  STRIPE_PRICE_YEARLY?: string;
+  STRIPE_ACCOUNT_ID?: string;
 };
 
 type Variables = {
@@ -71,6 +84,13 @@ export function createApp() {
     ),
   );
 
+  app.get("/billing/success", (c) => c.html(billingSuccessHtml()));
+  app.get("/billing/cancel", (c) => c.html(billingCancelHtml()));
+  app.get("/billing/upgrade", (c) =>
+    c.html(billingUpgradeHtml(new URL(c.req.url).origin)),
+  );
+  app.post("/webhooks/stripe", (c) => handleStripeWebhook(c));
+
   const v1 = new Hono<{ Bindings: Env; Variables: Variables }>();
 
   v1.use("*", async (c, next) => {
@@ -89,6 +109,18 @@ export function createApp() {
   v1.get("/quota", async (c) => {
     const quota = await quotaForDevice(c.env.DB, c.get("deviceId"));
     return c.json(quota satisfies QuotaStatus);
+  });
+
+  v1.post("/billing/checkout", async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as {
+      plan?: string;
+    };
+    const plan = body.plan === "yearly" ? "yearly" : "monthly";
+    return startCheckout(c, c.get("deviceId"), plan);
+  });
+
+  v1.post("/billing/portal", async (c) => {
+    return startPortal(c, c.get("deviceId"));
   });
 
   v1.get("/shots", async (c) => {

@@ -46,6 +46,11 @@ fn api_base() -> String {
 }
 
 #[tauri::command]
+fn get_api_base() -> String {
+    api_base()
+}
+
+#[tauri::command]
 fn get_device_id(app: AppHandle) -> Result<String, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -275,6 +280,7 @@ pub fn run() {
         ))
         .invoke_handler(tauri::generate_handler![
             get_device_id,
+            get_api_base,
             capture_and_share,
             capture_in_flight,
             copy_link,
