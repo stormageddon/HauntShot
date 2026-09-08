@@ -13,10 +13,12 @@ import {
   verifyWebhookEvent,
   type StripeEnv,
 } from "./stripe";
+import { requestOrigin } from "./origin";
 
 export type BillingEnv = {
   DB: D1Database;
   ENVIRONMENT?: string;
+  PUBLIC_ORIGIN?: string;
 } & Partial<StripeEnv>;
 
 type StripeCheckoutEnv = Pick<
@@ -55,7 +57,7 @@ function requireWebhookEnv(env: BillingEnv): StripeEnv {
 }
 
 function originOf(c: Context): string {
-  return new URL(c.req.url).origin;
+  return requestOrigin(c);
 }
 
 export async function startCheckout(

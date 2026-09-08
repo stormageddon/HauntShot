@@ -8,6 +8,7 @@ mod upload;
 use capture::CaptureOutcome;
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::image::Image;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_global_shortcut::{Builder as ShortcutBuilder, GlobalShortcutExt, ShortcutState};
@@ -103,7 +104,7 @@ async fn capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
 /// here so every "Link copied" comes from the same place.
 #[tauri::command]
 fn copy_link(app: AppHandle, url: String) -> Result<(), String> {
-    copy_to_clipboard(&app, &url)?;
+    copy_text_to_clipboard(&app, &url)?;
     toast::ok(&app, "Link copied", &url);
     Ok(())
 }
@@ -123,10 +124,23 @@ async fn shot_thumbnails(
     Ok(thumbs::collect(&app, &api_base(), &ids).await)
 }
 
-fn copy_to_clipboard(app: &AppHandle, url: &str) -> Result<(), String> {
+fn copy_text_to_clipboard(app: &AppHandle, url: &str) -> Result<(), String> {
     app.clipboard().write_text(url).map_err(|e| {
         let msg = format!("Clipboard write failed: {e}");
         toast::error(app, "Couldn’t copy the link", &msg);
+        msg
+    })
+}
+
+fn copy_image_to_clipboard(app: &AppHandle, png: &[u8]) -> Result<(), String> {
+    let image = Image::from_bytes(png).map_err(|e| {
+        let msg = format!("Clipboard image encode failed: {e}");
+        toast::error(app, "Couldn’t copy the screenshot", &msg);
+        msg
+    })?;
+    app.clipboard().write_image(&image).map_err(|e| {
+        let msg = format!("Clipboard write failed: {e}");
+        toast::error(app, "Couldn’t copy the screenshot", &msg);
         msg
     })
 }
@@ -182,6 +196,9 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         }
     };
 
+    // Paste-ready as soon as the snip exists; upload is only for the share URL.
+    let image_copied = copy_image_to_clipboard(&app, &png).is_ok();
+
     let _ = app.emit("share-status", "Uploading…");
 
     let device_id = get_device_id(app.clone())?;
@@ -230,8 +247,11 @@ async fn run_capture_and_share(app: AppHandle) -> Result<ShareSuccess, String> {
         .viewer_url
         .unwrap_or_else(|| format!("{base}{}", created.shot.viewer_path));
 
-    copy_to_clipboard(&app, &viewer_url)?;
-    toast::ok(&app, "Link copied · expires in 24h", &viewer_url);
+    if image_copied {
+        toast::ok(&app, "Screenshot copied · expires in 24h", &viewer_url);
+    } else {
+        toast::ok(&app, "Uploaded · copy the link from the panel", &viewer_url);
+    }
 
     let success = ShareSuccess {
         viewer_url,
@@ -290,6 +310,8 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(ShortcutBuilder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             None::<Vec<&str>>,

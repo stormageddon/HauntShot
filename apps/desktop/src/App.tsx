@@ -98,6 +98,25 @@ export default function App() {
       .catch((e) => setError(String(e)));
   }, []);
 
+  // Quiet update check once per session; Settings has the install button.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const update = await check();
+        if (!cancelled && update) {
+          setStatus(`Update ${update.version} available — Settings → Check`);
+        }
+      } catch {
+        // Offline or no release yet — ignore.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // The panel is only ever visible while focused, so focus tracks visibility.
   useEffect(() => {
     const unlisten = getCurrentWindow().onFocusChanged(({ payload }) =>
@@ -167,7 +186,7 @@ export default function App() {
       }),
       listen<{ viewerUrl: string }>("share-success", (e) => {
         setBusy(false);
-        setStatus(`Link copied · ${e.payload.viewerUrl}`);
+        setStatus(`Screenshot copied · ${e.payload.viewerUrl}`);
         setError("");
         void refresh();
       }),
@@ -178,7 +197,7 @@ export default function App() {
           setStatus("");
         } else {
           setError(e.payload.message);
-          setStatus("Couldn’t upload — link was not copied");
+          setStatus("Couldn’t upload");
         }
       }),
     ];
@@ -193,7 +212,7 @@ export default function App() {
     setStatus("Select a region…");
     try {
       const result = await invoke<{ viewerUrl: string }>("capture_and_share");
-      setStatus(`Link copied · ${result.viewerUrl}`);
+      setStatus(`Screenshot copied · ${result.viewerUrl}`);
       await refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

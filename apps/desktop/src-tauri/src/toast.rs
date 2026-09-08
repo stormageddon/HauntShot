@@ -3,7 +3,7 @@
 //! System notifications can't be relied on for capture feedback: in dev they are
 //! posted under Terminal's bundle id, and in release they're one System Settings
 //! toggle away from silence. Captures hide the panel, so this is the only thing
-//! that tells you whether the link made it to your clipboard.
+//! that tells you whether the screenshot made it to your clipboard.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;

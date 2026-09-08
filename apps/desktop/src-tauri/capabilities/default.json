@@ -11,6 +11,8 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
+    "updater:default",
+    "process:default",
     {
       "identifier": "http:default",
       "allow": [
@@ -20,7 +22,9 @@
         { "url": "https://www.hauntshot.com/**" },
         { "url": "https://*.hauntshot.app/**" },
         { "url": "https://*.hauntshot.com/**" },
-        { "url": "https://hauntshot-api.hauntshot.workers.dev/**" }
+        { "url": "https://hauntshot-api.hauntshot.workers.dev/**" },
+        { "url": "https://github.com/stormageddon/HauntShot/**" },
+        { "url": "https://objects.githubusercontent.com/**" }
       ]
     }
   ]

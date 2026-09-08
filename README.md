@@ -76,21 +76,20 @@ copied earlier. There is no headless region capture on Windows to use instead.
 
 ## Desktop builds
 
-Tauri can't cross-compile, so installers come from CI:
+Product downloads come from **GitHub Releases** (see [docs/RELEASE.md](docs/RELEASE.md)).
+Landing buttons hit `https://hauntshot.com/download/{mac,windows}`.
 
-| Platform | Workflow | Artifact |
+| Kind | Workflow | Output |
 | --- | --- | --- |
-| Windows | `Windows build` (`windows-latest`) | MSI + NSIS |
-| macOS | `macOS build` (`macos-latest`) | DMG + `.app` |
+| Release (ship) | `Release` on tag `v*` | GitHub Release + updater `latest.json` |
+| Smoke (CI) | `macOS build` / `Windows build` on `main` | Action artifacts |
 
-Both bake the API base in at build time from the `HAUNTSHOT_API_BASE` repo
-variable — set it once the Worker is deployed, or pass one to a manual run.
-Without it a build points at `127.0.0.1:8787`. A runtime `HAUNTSHOT_API_BASE`
-env var still wins, for local work.
+Release builds bake `HAUNTSHOT_API_BASE` (repo variable, default production). Smoke
+builds refuse a localhost bake-in the same way.
 
-Installers are unsigned: Windows SmartScreen will warn, and macOS Gatekeeper
-will block the first open until you right-click → Open (or clear the quarantine
-flag). The local Mac DMG is Apple Silicon (`aarch64`) only.
+**Code signing:** updater signatures use `TAURI_SIGNING_PRIVATE_KEY` (set). OS trust
+(Apple notarization + Windows Authenticode) needs the secrets listed in
+`docs/RELEASE.md` — until then Gatekeeper / SmartScreen will warn.
 
 ## Deploy the API
 
@@ -115,12 +114,12 @@ its own URLs with no extra config.
 Working: menubar tray + panel; region capture → upload → clipboard → toast; history
 with previews (click opens viewer); viewer + OG; **5 captures/day** free quota;
 hourly expiry purge; product/privacy/terms; launch-at-login; Windows Print Screen +
-branded icons; Stripe Upgrade + Customer Portal; API at `https://hauntshot.com`
+branded icons; Stripe Upgrade + Customer Portal; in-app updater; branded downloads
+from Releases; API at `https://hauntshot.com`
 (also `app` / `api` / `share` / `workers.dev`).
 
-**Next (Critical Path — see [ROADMAP.md](ROADMAP.md)):**
+**Next (Critical Path — see [ROADMAP.md](ROADMAP.md) and [docs/RELEASE.md](docs/RELEASE.md)):**
 
-1. **Code signing** — Apple notarization + Windows Authenticode
-2. **App updater** — Tauri updater (or version check) with signed artifacts
+1. **Code signing secrets** — Apple Developer ID + notarization, Windows Authenticode
 
 V2 highlights: full-screen hotkey, remappable hotkeys, custom region UI.

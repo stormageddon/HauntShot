@@ -19,6 +19,7 @@ export default function Settings({
   const [launchAtLogin, setLaunchAtLogin] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [billingError, setBillingError] = useState("");
+  const [updateMsg, setUpdateMsg] = useState("");
 
   useEffect(() => {
     void isEnabled()
@@ -76,6 +77,29 @@ export default function Settings({
     }
   }
 
+  async function checkForUpdates() {
+    if (busy) return;
+    setBusy(true);
+    setUpdateMsg("");
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const { relaunch } = await import("@tauri-apps/plugin-process");
+      const update = await check();
+      if (!update) {
+        setUpdateMsg("You're on the latest version.");
+        return;
+      }
+      setUpdateMsg(`Downloading ${update.version}…`);
+      await update.downloadAndInstall();
+      setUpdateMsg("Restarting…");
+      await relaunch();
+    } catch (e) {
+      setUpdateMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="list">
       <div className="row">
@@ -90,6 +114,22 @@ export default function Settings({
           onClick={() => void toggleLaunchAtLogin()}
         >
           {launchAtLogin ? "On" : launchAtLogin == null ? "…" : "Off"}
+        </button>
+      </div>
+
+      <div className="row">
+        <div className="meta">
+          <div className="ttl">Updates</div>
+          <div className="url">
+            {updateMsg || "Check for a newer HauntShot build and install it"}
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void checkForUpdates()}
+        >
+          Check
         </button>
       </div>
 
