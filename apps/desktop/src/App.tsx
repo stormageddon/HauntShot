@@ -186,7 +186,7 @@ export default function App() {
       }),
       listen<{ viewerUrl: string }>("share-success", (e) => {
         setBusy(false);
-        setStatus(`Link copied · ${e.payload.viewerUrl}`);
+        setStatus(`Screenshot copied · ${e.payload.viewerUrl}`);
         setError("");
         void refresh();
       }),
@@ -197,7 +197,7 @@ export default function App() {
           setStatus("");
         } else {
           setError(e.payload.message);
-          setStatus("Couldn’t upload — link was not copied");
+          setStatus("Couldn’t upload");
         }
       }),
     ];
@@ -212,7 +212,7 @@ export default function App() {
     setStatus("Select a region…");
     try {
       const result = await invoke<{ viewerUrl: string }>("capture_and_share");
-      setStatus(`Link copied · ${result.viewerUrl}`);
+      setStatus(`Screenshot copied · ${result.viewerUrl}`);
       await refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

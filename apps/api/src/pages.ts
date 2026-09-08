@@ -121,7 +121,7 @@ export function landingHtml(origin: string): string {
       </div>
       <div class="card">
         <h2>Menubar, not another window</h2>
-        <p>Lives in the tray. Hotkey on Mac and Windows. Clipboard gets the URL.</p>
+        <p>Lives in the tray. Hotkey on Mac and Windows. Clipboard gets the screenshot.</p>
       </div>
       <div class="card">
         <h2>HauntShot Pro · $4.99/mo or $29.99/yr</h2>
