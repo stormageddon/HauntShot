@@ -1,7 +1,7 @@
 {
   "name": "hauntshot",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Temporary screenshot sharing — capture, link, expire",
   "repository": {
     "type": "git",
