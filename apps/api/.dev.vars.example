@@ -1,0 +1,3 @@
+# Optional. wrangler dev remaps Host to hauntshot.com; this forces local share URLs.
+# Copy to .dev.vars if the MF-Original-Hostname fallback is not enough.
+PUBLIC_ORIGIN=http://127.0.0.1:8787

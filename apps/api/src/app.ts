@@ -13,7 +13,14 @@ import {
   quotaForDevice,
   rowToSummary,
 } from "./db/shots";
-import { landingHtml, privacyHtml, termsHtml } from "./pages";
+import {
+  downloadFilename,
+  goneHtml,
+  landingHtml,
+  privacyHtml,
+  termsHtml,
+  viewerHtml,
+} from "./pages";
 import {
   DOWNLOAD_FALLBACK,
   fetchUpdaterManifest,
@@ -28,10 +35,12 @@ import {
   startCheckout,
   startPortal,
 } from "./billing";
+import { requestOrigin } from "./origin";
 
 export type Env = {
   DB: D1Database;
   BUCKET: R2Bucket;
+  PUBLIC_ORIGIN?: string;
   ENVIRONMENT?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
@@ -73,7 +82,7 @@ export function createApp() {
     return c.json({ ok: true, service: "hauntshot-api", env: environment });
   });
 
-  app.get("/", (c) => c.html(landingHtml(new URL(c.req.url).origin)));
+  app.get("/", (c) => c.html(landingHtml(requestOrigin(c))));
   app.get("/privacy", (c) => c.html(privacyHtml()));
   app.get("/terms", (c) => c.html(termsHtml()));
   app.get("/download/mac", async (c) => {
@@ -103,7 +112,7 @@ export function createApp() {
   app.get("/billing/success", (c) => c.html(billingSuccessHtml()));
   app.get("/billing/cancel", (c) => c.html(billingCancelHtml()));
   app.get("/billing/upgrade", (c) =>
-    c.html(billingUpgradeHtml(new URL(c.req.url).origin)),
+    c.html(billingUpgradeHtml(requestOrigin(c))),
   );
   app.post("/webhooks/stripe", (c) => handleStripeWebhook(c));
 
@@ -142,7 +151,7 @@ export function createApp() {
   v1.get("/shots", async (c) => {
     const deviceId = c.get("deviceId");
     const rows = await listLiveShots(c.env.DB, deviceId);
-    const origin = new URL(c.req.url).origin;
+    const origin = requestOrigin(c);
     const body: ListShotsResponse = {
       shots: rows.map((r) => rowToSummary(r, origin)),
       quota: await quotaForDevice(c.env.DB, deviceId),
@@ -205,7 +214,7 @@ export function createApp() {
       expires_at: expiresAt,
     });
 
-    const origin = new URL(c.req.url).origin;
+    const origin = requestOrigin(c);
     const body: CreateShotResponse = {
       shot: rowToSummary(
         {
@@ -232,54 +241,21 @@ export function createApp() {
   app.get("/s/:id", async (c) => {
     const shot = await getLiveShot(c.env.DB, c.req.param("id"));
     if (!shot) {
-      return c.html(
-        `<!doctype html><html><head><meta charset="utf-8"><title>HauntShot</title></head>
-         <body style="font-family:system-ui;max-width:32rem;margin:4rem auto;padding:0 1rem;background:#0a0212;color:#f0e8fa">
-           <h1>This screenshot is gone</h1>
-           <p>It expired or the link is invalid. Temporary links are deleted automatically after 24 hours.</p>
-         <p style="margin-top:1.5rem"><a href="/" style="color:#c9a8ff">HauntShot</a> · <a href="/privacy" style="color:#c9a8ff">Privacy</a></p>
-         </body></html>`,
-        404,
-      );
+      return c.html(goneHtml(), 404);
     }
 
-    const expiresIso = rowToSummary(shot, new URL(c.req.url).origin).expiresAt;
-    const remainingMs = new Date(expiresIso).getTime() - Date.now();
-    const hours = Math.max(0, Math.floor(remainingMs / 3_600_000));
-    const mins = Math.max(0, Math.floor((remainingMs % 3_600_000) / 60_000));
+    const origin = requestOrigin(c);
     const imageUrl = `/i/${shot.id}`;
-    const origin = new URL(c.req.url).origin;
-
-    return c.html(`<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HauntShot · Temporary screenshot</title>
-  <meta property="og:title" content="Temporary screenshot" />
-  <meta property="og:description" content="Expires in about ${hours}h ${mins}m · view only" />
-  <meta property="og:image" content="${origin}${imageUrl}" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <style>
-    body { margin:0; font-family:system-ui,sans-serif; background:#0a0212; color:#f0e8fa; }
-    header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; }
-    img { display:block; max-width:100%; max-height:calc(100vh - 88px); margin:0 auto; }
-    footer { padding:12px 16px; font-size:12px; color:#a898bf; display:flex; justify-content:space-between; }
-  </style>
-</head>
-<body>
-  <header>
-    <strong>HauntShot</strong>
-    <span>Expires in ${hours}h ${mins}m</span>
-  </header>
-  <main><img src="${imageUrl}" alt="Temporary screenshot" /></main>
-  <footer>
-    <span><a href="/privacy" style="color:#a898bf">Privacy</a> · view only · purged after 24h</span>
-    <span>Report</span>
-  </footer>
-</body>
-</html>`);
+    const filename = downloadFilename(shot.id, shot.content_type);
+    return c.html(
+      viewerHtml({
+        imageUrl,
+        origin,
+        expiresAt: rowToSummary(shot, origin).expiresAt,
+        downloadUrl: `${imageUrl}?download=1`,
+        filename,
+      }),
+    );
   });
 
   app.get("/i/:id", async (c) => {
@@ -288,12 +264,16 @@ export function createApp() {
     const storage = new R2Storage(c.env.BUCKET);
     const obj = await storage.get(shot.object_key);
     if (!obj) return c.notFound();
-    return new Response(obj.body, {
-      headers: {
-        "Content-Type": obj.contentType,
-        "Cache-Control": "public, max-age=300",
-      },
-    });
+    const filename = downloadFilename(shot.id, shot.content_type);
+    const headers: Record<string, string> = {
+      "Content-Type": obj.contentType,
+      "Cache-Control": "public, max-age=300",
+    };
+    if (c.req.query("download") !== undefined) {
+      headers["Content-Disposition"] =
+        `attachment; filename="${filename}"`;
+    }
+    return new Response(obj.body, { headers });
   });
 
   return app;

@@ -108,7 +108,7 @@ export function landingHtml(origin: string): string {
     <h1>Capture. Share. Vanish.</h1>
     <p class="lead">
       Region select to a temporary link in one motion. Free for five captures a day.
-      Links expire and are deleted after 24 hours. View only — no download button.
+      Links expire and are deleted after 24 hours.
     </p>
     <div class="cta">
       <a class="btn primary" href="${mac}">Download for Mac</a>
@@ -166,6 +166,110 @@ export function termsHtml(): string {
       <li>Subscriptions renew until cancelled. Manage billing through the Stripe customer portal linked from the app.</li>
     </ul>`,
   );
+}
+
+/** Remaining TTL as `23h 45m` (zero-padded minutes). */
+export function formatExpiryRemaining(expiresAt: string, now = Date.now()): string {
+  const ms = Math.max(0, new Date(expiresAt).getTime() - now);
+  const hours = Math.floor(ms / 3_600_000);
+  const mins = Math.floor((ms % 3_600_000) / 60_000);
+  return `${hours}h ${String(mins).padStart(2, "0")}m`;
+}
+
+export function downloadFilename(id: string, contentType: string): string {
+  const subtype = contentType.split("/")[1]?.split(";")[0]?.trim() || "png";
+  const ext = subtype === "jpeg" ? "jpg" : subtype;
+  return `hauntshot-${id}.${ext}`;
+}
+
+export function goneHtml(): string {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>HauntShot</title></head>
+         <body style="font-family:system-ui;max-width:32rem;margin:4rem auto;padding:0 1rem;background:#0a0212;color:#f0e8fa">
+           <h1>This screenshot is gone</h1>
+           <p>It expired or the link is invalid. Temporary links are deleted automatically after 24 hours.</p>
+         <p style="margin-top:1.5rem"><a href="/" style="color:#c9a8ff">HauntShot</a> · <a href="/privacy" style="color:#c9a8ff">Privacy</a></p>
+         </body></html>`;
+}
+
+export function viewerHtml(opts: {
+  imageUrl: string;
+  origin: string;
+  expiresAt: string;
+  downloadUrl: string;
+  filename: string;
+}): string {
+  const remaining = formatExpiryRemaining(opts.expiresAt);
+  const expiresJson = JSON.stringify(opts.expiresAt);
+  const shotId = opts.imageUrl.replace(/^.*\//, "");
+  const reportHref = `mailto:reports@hauntshot.com?subject=${encodeURIComponent(`Inappropriate image ${shotId}`)}`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HauntShot · Temporary screenshot</title>
+  <meta property="og:title" content="Temporary screenshot" />
+  <meta property="og:description" content="Expires in ${remaining}" />
+  <meta property="og:image" content="${opts.origin}${opts.imageUrl}" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style>
+    :root { --ink:#f0e8fa; --muted:#a898bf; --accent:#c9a8ff; --bg:#0a0212; }
+    body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+    header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; gap:12px; }
+    a.download {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:0.4rem 0.85rem; border-radius:8px;
+      background:var(--accent); color:var(--bg); text-decoration:none;
+      font-weight:600; font-size:0.9rem;
+    }
+    a.download:hover { filter:brightness(1.08); }
+    img { display:block; max-width:100%; max-height:calc(100vh - 88px); margin:0 auto; }
+    footer { padding:12px 16px; font-size:12px; color:var(--muted); display:flex; justify-content:space-between; gap:12px; }
+    footer a { color:var(--muted); }
+    footer a.report { text-decoration:underline; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>HauntShot</strong>
+    <a class="download" href="${opts.downloadUrl}" download="${opts.filename}">Download</a>
+  </header>
+  <main><img src="${opts.imageUrl}" alt="Temporary screenshot" /></main>
+  <footer>
+    <span><a href="/privacy">Privacy</a> · <span id="ttl">Expires in ${remaining}</span></span>
+    <span><a class="report" href="${reportHref}" title="reports@hauntshot.com">Report inappropriate image</a></span>
+  </footer>
+  <script>
+    (function () {
+      var report = document.querySelector("a.report");
+      if (report) {
+        report.addEventListener("click", function (e) {
+          e.preventDefault();
+          var frame = document.createElement("iframe");
+          frame.src = report.href;
+          frame.style.cssText = "display:none;width:0;height:0;border:0";
+          document.body.appendChild(frame);
+          setTimeout(function () { frame.remove(); }, 1500);
+        });
+      }
+      var expiresAt = Date.parse(${expiresJson});
+      var el = document.getElementById("ttl");
+      if (!el) return;
+      function pad(n) { return n < 10 ? "0" + n : String(n); }
+      function tick() {
+        var ms = expiresAt - Date.now();
+        if (ms <= 0) { el.textContent = "Expired"; return; }
+        var hours = Math.floor(ms / 3600000);
+        var mins = Math.floor((ms % 3600000) / 60000);
+        el.textContent = "Expires in " + hours + "h " + pad(mins) + "m";
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+  </script>
+</body>
+</html>`;
 }
 
 function legalPage(title: string, body: string): string {
